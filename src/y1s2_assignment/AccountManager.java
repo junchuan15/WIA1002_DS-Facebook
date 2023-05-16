@@ -240,7 +240,7 @@ public class AccountManager {
         while (!isValidName) {
             System.out.print("Name: ");
             String NameInput = sc.nextLine();
-            String regex_name = "^^[a-zA-Z]+([ '-][a-zA-Z]+)*$";
+            String regex_name = "^^[a-zA-Z]+([ '-/][a-zA-Z]+)*$";
             if (Checkinglength(NameInput, 4, 50)) {
                 System.out.println("The length of Name must be between 4-50.");
             } else {
