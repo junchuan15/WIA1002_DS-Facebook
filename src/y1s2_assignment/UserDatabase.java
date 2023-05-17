@@ -26,12 +26,11 @@ public class UserDatabase {
 
     public void addUsers(User user) {
         users.add(user);
-        saveUser();
     }
 
-    public void registeredUser(String username, String email, String contactNumber, String password) {
-        User newUser = new User.Builder(username, email, contactNumber, password).build();
-        String[] userData = {newUser.getUsername(), newUser.getEmailAddress(), newUser.getContactNumber(), newUser.getPassword()};
+    public void registeredUser(String accountID,String username, String email, String contactNumber, String password) {
+        User newUser = new User.Builder(accountID,username, email, contactNumber, password).build();
+        String[] userData = {newUser.getAccountID(),newUser.getUsername(), newUser.getEmailAddress(), newUser.getContactNumber(), newUser.getPassword()};
 
         try ( BufferedWriter bw = new BufferedWriter(new FileWriter(FILENAME, true))) {
             bw.write(String.join(",", userData));
@@ -39,30 +38,20 @@ public class UserDatabase {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        
     }
 
-    public void saveUser() {
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(FILENAME, true));
-            for (User user : users) {
-                StringBuilder userData = new StringBuilder();
-                userData.append(user.getEmailAddress()).append(",")
-                        .append(user.getContactNumber()).append(",")
-                        .append(user.getUsername()).append(",")
-                        .append(user.getPassword()).append(",")
-                        .append(user.getGender()).append(",")
-                        .append(user.getBirthday()).append(",")
-                        .append(user.getAddress()).append(",")
-                        .append(String.join(";", user.getHobbies()));
-                bw.write(userData.toString());
-                bw.newLine();
+
+    public User getUser(String username) {
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                return user;
             }
-        } catch (IOException e) {
-            System.out.println("Error writing to file.");
         }
+        return null;
     }
 
-    public List<User> getUsers() {
+    public List<User> getAllUsers() {
         return this.users;
     }
 
@@ -91,8 +80,8 @@ public class UserDatabase {
             BufferedReader br = new BufferedReader(new FileReader(FILENAME));
             String line;
             while ((line = br.readLine()) != null) {
-                String[] row = line.split(",");
-                if (row[1].equals(loginId) || row[2].equals(loginId)) {
+                String[] column = line.split(",");
+                if (column[1].equals(loginId) || column[2].equals(loginId)) {
                     br.close();
                     return true;
                 }
@@ -147,24 +136,24 @@ public class UserDatabase {
         if (!file.exists() || file.length() == 0) {
             return false;
         }
- try {
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = br.readLine()) != null) {
-            String[] row = line.split(",");
-            if (row.length >= 3) {
-                if (row[0].equals(check) || row[1].equals(check) || row[2].equals(check)) {
-                    br.close();
-                    return true;
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] row = line.split(",");
+                if (row.length >= 3) {
+                    if (row[0].equals(check) || row[1].equals(check) || row[2].equals(check)) {
+                        br.close();
+                        return true;
+                    }
                 }
             }
+            br.close();
+        } catch (IOException e) {
+            System.out.println("Error reading file.");
         }
-        br.close();
-    } catch (IOException e) {
-        System.out.println("Error reading file.");
+        return false;
     }
-    return false;
-}
 
     public void updateUserDetail(User user) {
         try {
@@ -195,4 +184,21 @@ public class UserDatabase {
             e.printStackTrace();
         }
     }
+    
+     private void readUser(String username) {
+         User
+           try {
+            BufferedReader br = new BufferedReader(new FileReader(FILENAME));
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] column = line.split(",");
+                if (column[0].equals(username)){
+                    column[0]=get
+                }
+            }
+            br.close();
+        } catch (IOException e) {
+            System.out.println("Error reading file.");
+        }
+}
 }

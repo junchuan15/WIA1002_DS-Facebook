@@ -13,7 +13,7 @@ import java.util.Stack;
  * @author Asus
  */
 public class User {
-
+    private String accountID;
     private String Username;
     private String EmailAddress;
     private String ContactNumber;
@@ -30,6 +30,7 @@ public class User {
  
 
     private User(Builder builder) {
+        this.accountID = builder.accountID;
         this.Username = builder.Username;
         this.EmailAddress = builder.EmailAddress;
         this.ContactNumber = builder.ContactNumber;
@@ -40,9 +41,16 @@ public class User {
         this.Address = builder.Address;
         this.Gender = builder.Gender;
         this.RelationshipStatus = builder.RelationshipStatus;
-        this.NumberOfFriends = builder.NumberOfFriends;
         this.Hobbies = builder.Hobbies;
         this.Jobs = builder.Jobs;
+    }
+
+    public String getAccountID() {
+        return accountID;
+    }
+
+    public String setAccountID(String accountID) {
+        this.accountID = accountID;
     }
 
     public String getUsername() {
@@ -85,10 +93,6 @@ public class User {
         return RelationshipStatus;
     }
 
-    public int getNumberOfFriends() {
-        return NumberOfFriends;
-    }
-
     public List<String> getHobbies() {
         return Hobbies;
     }
@@ -97,12 +101,60 @@ public class User {
         return Jobs;
     }
 
+    public void setUsername(String Username) {
+        this.Username = Username;
+    }
+
+    public void setEmailAddress(String EmailAddress) {
+        this.EmailAddress = EmailAddress;
+    }
+
+    public void setContactNumber(String ContactNumber) {
+        this.ContactNumber = ContactNumber;
+    }
+
+    public void setPassword(String Password) {
+        this.Password = Password;
+    }
+
+    public void setName(String Name) {
+        this.Name = Name;
+    }
+
+    public void setBirthday(String Birthday) {
+        this.Birthday = Birthday;
+    }
+
+    public void setAge(int Age) {
+        this.Age = Age;
+    }
+
+    public void setAddress(String Address) {
+        this.Address = Address;
+    }
+
+    public void setGender(String Gender) {
+        this.Gender = Gender;
+    }
+
+    public void setRelationshipStatus(String RelationshipStatus) {
+        this.RelationshipStatus = RelationshipStatus;
+    }
+    
+    public void setHobbies(List<String> Hobbies) {
+        this.Hobbies = Hobbies;
+    }
+
+    public void setJobs(List<String> Jobs) {
+        this.Jobs = Jobs;
+    }
+
     public User getLoginUser() {
-        return new User.Builder(Username, EmailAddress, ContactNumber, Password).build();
+        return new User.Builder(accountID,Username, EmailAddress, ContactNumber, Password).build();
     }
 
     public static class Builder {
-
+        private String accountID;
         private String Username;
         private String EmailAddress;
         private String ContactNumber;
@@ -113,18 +165,23 @@ public class User {
         private String Address;
         private String Gender;
         private String RelationshipStatus;
-        private int NumberOfFriends;
         private List<String> Hobbies;
         private List<String> Jobs;
      
-
-        public Builder(String Username, String EmailAddress, String ContactNumber, String Password) {
+        public Builder(String accountID ,String Username, String EmailAddress, String ContactNumber, String Password) {
+            this.accountID = accountID;
             this.Username = Username;
             this.EmailAddress = EmailAddress;
             this.ContactNumber = ContactNumber;
             this.Password = Password;
         }
 
+        public Builder setAccountID(String accountID) {
+            this.accountID = accountID;
+            return(this);
+        }
+
+       
         public Builder setUsername(String Username) {
             this.Username = Username;
             return (this);
@@ -169,12 +226,7 @@ public class User {
             this.RelationshipStatus = RelationshipStatus;
              return this;
         }
-        
-        public Builder setNumberOfFriends(int NumberOfFriends) {
-            this.NumberOfFriends = NumberOfFriends;
-            return this;
-        }
-
+     
         public Builder setHobbies(List<String> Hobbies) {
             this.Hobbies = Hobbies;
             return this;
@@ -184,7 +236,7 @@ public class User {
             this.Jobs = Jobs;
             return this;
         }
-
+        
         public User build() {
             return new User(this);
         }
