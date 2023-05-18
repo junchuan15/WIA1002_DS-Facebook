@@ -41,6 +41,7 @@ public class User {
         this.Address = builder.Address;
         this.Gender = builder.Gender;
         this.RelationshipStatus = builder.RelationshipStatus;
+        this.NumberOfFriends = builder.NumberOfFriends;
         this.Hobbies = builder.Hobbies;
         this.Jobs = builder.Jobs;
     }
@@ -49,7 +50,7 @@ public class User {
         return accountID;
     }
 
-    public String setAccountID(String accountID) {
+    public void setAccountID(String accountID) {
         this.accountID = accountID;
     }
 
@@ -91,6 +92,10 @@ public class User {
 
     public String getRelationshipStatus() {
         return RelationshipStatus;
+    }
+
+    public int getNumberOfFriends() {
+        return NumberOfFriends;
     }
 
     public List<String> getHobbies() {
@@ -149,9 +154,6 @@ public class User {
         this.Jobs = Jobs;
     }
 
-    public User getLoginUser() {
-        return new User.Builder(accountID,Username, EmailAddress, ContactNumber, Password).build();
-    }
 
     public static class Builder {
         private String accountID;
@@ -165,6 +167,7 @@ public class User {
         private String Address;
         private String Gender;
         private String RelationshipStatus;
+        private int  NumberOfFriends;
         private List<String> Hobbies;
         private List<String> Jobs;
      
@@ -174,6 +177,10 @@ public class User {
             this.EmailAddress = EmailAddress;
             this.ContactNumber = ContactNumber;
             this.Password = Password;
+        }
+
+        Builder() {
+           
         }
 
         public Builder setAccountID(String accountID) {
@@ -212,6 +219,11 @@ public class User {
             return this;
         }
 
+        public Builder setAge(int Age) {
+            this.Age = Age;
+            return this;
+        }
+
         public Builder setAddress(String Address) {
             this.Address = Address;
             return this;
@@ -226,14 +238,19 @@ public class User {
             this.RelationshipStatus = RelationshipStatus;
              return this;
         }
-     
-        public Builder setHobbies(List<String> Hobbies) {
-            this.Hobbies = Hobbies;
+       
+        public Builder setNumberOfFriends(int NumberOfFriends) {
+            this.NumberOfFriends = NumberOfFriends;
             return this;
         }
-
-        public Builder setJobs(List<String> Jobs) {
+     
+        public Builder setHobbies(List<String> Hobbies) {
             this.Jobs = Jobs;
+            return this;
+        }
+           
+        public Builder setJobs(List<String> Jobs) {
+            this.Hobbies = Hobbies;
             return this;
         }
         

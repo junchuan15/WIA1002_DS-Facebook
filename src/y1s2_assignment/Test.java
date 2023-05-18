@@ -11,7 +11,7 @@ public class Test {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         AccountManager accountManager = new AccountManager();
-        String loginUser = "";
+        User loggedInUser = null;
         boolean login = false;
         boolean exit = false;
         while (!exit) {
@@ -29,7 +29,7 @@ public class Test {
                     case 1:
                         accountManager.UserRegister();
                     case 2:
-                        loginUser = accountManager.UserLogin();
+                        loggedInUser = accountManager.userLogin();
                         login = true;
                         break;
                     case 3:
@@ -41,13 +41,14 @@ public class Test {
                         break;
                 }
             } 
-                UserAccess userlogin = new UserAccess(loginUser);
+                UserAccess userAccess = new UserAccess(loggedInUser);
+                System.out.println("\n==============================================\nUSER MENU");
                 System.out.println("1. Edit Account");
                 System.out.println("2. Display Account");
                 int choice = sc.nextInt();
                 switch (choice) {
                     case 1:
-                        userlogin.EditProfile();
+                        userAccess.EditProfile();
                         exit = true;
                     default:
                         System.out.println("Invalid choice!");

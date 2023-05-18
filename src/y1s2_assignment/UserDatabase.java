@@ -184,21 +184,4 @@ public class UserDatabase {
             e.printStackTrace();
         }
     }
-    
-     private void readUser(String username) {
-         User
-           try {
-            BufferedReader br = new BufferedReader(new FileReader(FILENAME));
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] column = line.split(",");
-                if (column[0].equals(username)){
-                    column[0]=get
-                }
-            }
-            br.close();
-        } catch (IOException e) {
-            System.out.println("Error reading file.");
-        }
-}
 }

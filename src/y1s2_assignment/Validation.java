@@ -26,14 +26,16 @@ import java.util.regex.Pattern;
  */
 public class Validation {
 
-    private static UserDatabase database = new UserDatabase();
+    private DatabaseSQL database = new DatabaseSQL();
     Scanner sc = new Scanner(System.in);
+    private int currentAccountID = 1;
 
-    public String accountIDgenerator(){
-        int accountID = 1;
-        return String.format("%05s", accountID);
+    public String generateAccountID() {
+        String accountID = String.format("%05d", currentAccountID);
+        currentAccountID++;
+        return accountID;
     }
-    
+
     public String validateUsername() {
         String UsernameInput = "";
         boolean isUniqueUsername = false;
@@ -44,7 +46,7 @@ public class Validation {
             if (Checkinglength(UsernameInput, 4, 20)) {
                 System.out.println("The length of Username must be between 4-20.");
             } else {
-                if (database.CheckingExist(UsernameInput)) {
+                if (database.isExist(UsernameInput)) {
                     System.out.println("The username '" + UsernameInput + "' already exists.");
                 } else {
                     if (!Validification(UsernameInput, regex_username)) {
@@ -66,7 +68,7 @@ public class Validation {
             System.out.print("Email Address: ");
             EmailAddressInput = sc.nextLine();
             String regex_email = "^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$";
-            if (database.CheckingExist(EmailAddressInput)) {
+            if (database.isExist(EmailAddressInput)) {
                 System.out.println("The email '" + EmailAddressInput + "' had already been registered.");
             } else {
                 if (!Validification(EmailAddressInput, regex_email)) {
@@ -89,7 +91,7 @@ public class Validation {
                 System.out.println("The length of Contact Number must be between 7-15.");
             } else {
                 String regex_phone = "^[0-9-]+$";
-                if (database.CheckingExist(ContactNumberInput)) {
+                if (database.isExist(ContactNumberInput)) {
                     System.out.println("The contact number '" + ContactNumberInput + "' had already been registered.");
                 } else {
                     if (!Validification(ContactNumberInput, regex_phone)) {
@@ -137,7 +139,7 @@ public class Validation {
                     System.out.print("Retype Password: ");
                     retypePassword = sc.nextLine();
                 }
-                 PasswordInput = encryptPassword(PasswordInput);
+                PasswordInput = encryptPassword(PasswordInput);
             }
         }
         return PasswordInput;
@@ -199,6 +201,12 @@ public class Validation {
             }
         }
         return birthdayInput;
+    }
+
+    public int calculateAge(String birthday) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate date = LocalDate.parse(birthday, formatter);
+        return Period.between(date, LocalDate.now()).getYears();
     }
 
     public String validateAddress() {
@@ -286,9 +294,10 @@ public class Validation {
                     break;
             }
         }
-       return relationshipStatus;   
+        return relationshipStatus;
     }
-    public List<String> validateHobby(){
+
+    public List<String> validateHobby() {
         List<String> hobbies = new ArrayList<>();
         boolean isAddingHobby = false;
         sc.nextLine();
@@ -308,9 +317,9 @@ public class Validation {
         }
         return hobbies;
     }
-    
-    public Stack<String> validateJobs(){
-        Stack <String> jobs = new Stack<>();
+
+    public Stack<String> validateJobs() {
+        Stack<String> jobs = new Stack<>();
         boolean isAddingJobs = false;
         while (!isAddingJobs) {
             System.out.print("Current/Previous Job(type 'done' to finish input):");
@@ -328,7 +337,7 @@ public class Validation {
         }
         return jobs;
     }
-    
+
     public boolean Checkinglength(String str, int a, int b) {
         if (str.length() < a || str.length() > b) {
             return true;
@@ -343,7 +352,7 @@ public class Validation {
         return matcher.matches();
     }
 
-   public static String encryptPassword(String password) {
+    public String encryptPassword(String password) {
         try {
             SecureRandom random = new SecureRandom();
             byte[] salt = new byte[16];
@@ -375,4 +384,37 @@ public class Validation {
             return null;
         }
     }
+    
+    public boolean validatePassword(String inputPassword, String encryptedPassword) {
+    String[] parts = encryptedPassword.split("\\|");
+    String hashPart = parts[0];
+    String saltPart = parts[1];
+
+    try {
+        byte[] salt = new byte[saltPart.length() / 2];
+        for (int i = 0; i < salt.length; i++) {
+            int index = i * 2;
+            int value = Integer.parseInt(saltPart.substring(index, index + 2), 16);
+            salt[i] = (byte) value;
+        }
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(salt);
+        byte[] hash = md.digest(inputPassword.getBytes(StandardCharsets.UTF_8));
+
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hash) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+
+        return hexString.toString().equals(hashPart);
+    } catch (NoSuchAlgorithmException e) {
+        System.out.println("Error decrypting password.");
+        return false;
+    }
+}
 }
