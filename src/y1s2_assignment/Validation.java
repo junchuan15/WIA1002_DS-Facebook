@@ -28,13 +28,6 @@ public class Validation {
 
     private DatabaseSQL database = new DatabaseSQL();
     Scanner sc = new Scanner(System.in);
-    private int currentAccountID = 1;
-
-    public String generateAccountID() {
-        String accountID = String.format("%05d", currentAccountID);
-        currentAccountID++;
-        return accountID;
-    }
 
     public String validateUsername() {
         String UsernameInput = "";
@@ -234,17 +227,17 @@ public class Validation {
             System.out.println("2. Female");
             System.out.println("3. Other");
             System.out.print("Select your gender: ");
-            int choice = sc.nextInt();
+            String choice = sc.nextLine();
             switch (choice) {
-                case 1:
+                case "1":
                     gender = "Male";
                     isValidGender = true;
                     break;
-                case 2:
+                case "2":
                     gender = "Female";
                     isValidGender = true;
                     break;
-                case 3:
+                case "3":
                     gender = "Other";
                     isValidGender = true;
                     break;
@@ -267,25 +260,25 @@ public class Validation {
             System.out.println("4. It's complicated");
             System.out.println("5. Hide");
             System.out.print("Select your relationship status: ");
-            int choice = sc.nextInt();
+            String choice = sc.nextLine();
             switch (choice) {
-                case 1:
+                case "1":
                     relationshipStatus = "Single";
                     isValidrelationshipStatus = true;
                     break;
-                case 2:
+                case "2":
                     relationshipStatus = "In a relationship";
                     isValidrelationshipStatus = true;
                     break;
-                case 3:
+                case "3":
                     relationshipStatus = "Married";
                     isValidrelationshipStatus = true;
                     break;
-                case 4:
+                case "4":
                     relationshipStatus = "It's Complicated";
                     isValidrelationshipStatus = true;
                     break;
-                case 5:
+                case "5":
                     relationshipStatus = "Hide";
                     isValidrelationshipStatus = true;
                     break;
@@ -297,10 +290,10 @@ public class Validation {
         return relationshipStatus;
     }
 
-    public List<String> validateHobby() {
-        List<String> hobbies = new ArrayList<>();
+    public ArrayList<String> validateHobby() {
+        ArrayList<String> hobbies = new ArrayList<>();
         boolean isAddingHobby = false;
-        sc.nextLine();
+      
         while (!isAddingHobby) {
             System.out.print("Enter hobby (type 'done' to finish input): ");
             String hobbyInput = sc.nextLine();
@@ -318,24 +311,21 @@ public class Validation {
         return hobbies;
     }
 
-    public Stack<String> validateJobs() {
-        Stack<String> jobs = new Stack<>();
-        boolean isAddingJobs = false;
-        while (!isAddingJobs) {
-            System.out.print("Current/Previous Job(type 'done' to finish input):");
-            String jobInput = sc.nextLine();
-            if (jobInput.equalsIgnoreCase("done")) {
-                isAddingJobs = true;
-                break;
-            }
-            String regexJob = "^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$";
-            if (!Validification(jobInput, regexJob)) {
-                System.out.println("Invalid job input. Please try again.");
+    public String validateJobs() {
+        String JobInput = "";
+        boolean isValidJob = false;
+        while (!isValidJob) {
+            System.out.print("Job: ");
+            JobInput = sc.nextLine();
+            String regex_job = "^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$";
+            if (!Validification(JobInput, regex_job)) {
+                System.out.println("Address is invalid. Please try again.");
             } else {
-                jobs.push(jobInput.trim());
+                isValidJob = true;
             }
         }
-        return jobs;
+        return JobInput;
+
     }
 
     public boolean Checkinglength(String str, int a, int b) {
@@ -384,37 +374,37 @@ public class Validation {
             return null;
         }
     }
-    
+
     public boolean validatePassword(String inputPassword, String encryptedPassword) {
-    String[] parts = encryptedPassword.split("\\|");
-    String hashPart = parts[0];
-    String saltPart = parts[1];
+        String[] parts = encryptedPassword.split("\\|");
+        String hashPart = parts[0];
+        String saltPart = parts[1];
 
-    try {
-        byte[] salt = new byte[saltPart.length() / 2];
-        for (int i = 0; i < salt.length; i++) {
-            int index = i * 2;
-            int value = Integer.parseInt(saltPart.substring(index, index + 2), 16);
-            salt[i] = (byte) value;
-        }
-
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(salt);
-        byte[] hash = md.digest(inputPassword.getBytes(StandardCharsets.UTF_8));
-
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hash) {
-            String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) {
-                hexString.append('0');
+        try {
+            byte[] salt = new byte[saltPart.length() / 2];
+            for (int i = 0; i < salt.length; i++) {
+                int index = i * 2;
+                int value = Integer.parseInt(saltPart.substring(index, index + 2), 16);
+                salt[i] = (byte) value;
             }
-            hexString.append(hex);
-        }
 
-        return hexString.toString().equals(hashPart);
-    } catch (NoSuchAlgorithmException e) {
-        System.out.println("Error decrypting password.");
-        return false;
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(salt);
+            byte[] hash = md.digest(inputPassword.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+
+            return hexString.toString().equals(hashPart);
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("Error decrypting password.");
+            return false;
+        }
     }
-}
 }

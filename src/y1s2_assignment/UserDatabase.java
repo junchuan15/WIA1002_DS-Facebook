@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package y1s2_assignment;
+/*package y1s2_assignment;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +15,8 @@ import java.util.List;
  *
  * @author Asus
  */
-public class UserDatabase {
+
+/*public class UserDatabase {
 
     private static String FILENAME = "users.csv";
     private List<User> users;
@@ -185,3 +186,4 @@ public class UserDatabase {
         }
     }
 }
+*/

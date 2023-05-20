@@ -13,6 +13,7 @@ import java.util.Stack;
  * @author Asus
  */
 public class User {
+
     private String accountID;
     private String Username;
     private String EmailAddress;
@@ -25,11 +26,10 @@ public class User {
     private String Gender;
     private String RelationshipStatus;
     private int NumberOfFriends;
-    private List<String> Hobbies;
-    private List<String> Jobs;
- 
+    private ArrayList<String> Hobbies;
+    private Stack<String> Jobs;
 
-    private User(Builder builder) {
+    public User(Builder builder) {
         this.accountID = builder.accountID;
         this.Username = builder.Username;
         this.EmailAddress = builder.EmailAddress;
@@ -98,11 +98,14 @@ public class User {
         return NumberOfFriends;
     }
 
-    public List<String> getHobbies() {
+    public ArrayList<String> getHobbies() {
         return Hobbies;
     }
 
-    public List<String> getJobs() {
+    public Stack<String> getJobs() {
+        if (Jobs == null) {
+            Jobs = new Stack<>();
+        }
         return Jobs;
     }
 
@@ -145,17 +148,20 @@ public class User {
     public void setRelationshipStatus(String RelationshipStatus) {
         this.RelationshipStatus = RelationshipStatus;
     }
-    
-    public void setHobbies(List<String> Hobbies) {
+
+    public void setHobbies(ArrayList<String> Hobbies) {
         this.Hobbies = Hobbies;
     }
 
-    public void setJobs(List<String> Jobs) {
+    public void setJobs(Stack<String> Jobs) {
+        if (this.Jobs == null) {
+            this.Jobs = new Stack<>();
+        }
         this.Jobs = Jobs;
     }
 
-
     public static class Builder {
+
         private String accountID;
         private String Username;
         private String EmailAddress;
@@ -167,11 +173,11 @@ public class User {
         private String Address;
         private String Gender;
         private String RelationshipStatus;
-        private int  NumberOfFriends;
-        private List<String> Hobbies;
-        private List<String> Jobs;
-     
-        public Builder(String accountID ,String Username, String EmailAddress, String ContactNumber, String Password) {
+        private int NumberOfFriends;
+        private ArrayList<String> Hobbies;
+        private Stack<String> Jobs;
+
+        public Builder(String accountID, String Username, String EmailAddress, String ContactNumber, String Password) {
             this.accountID = accountID;
             this.Username = Username;
             this.EmailAddress = EmailAddress;
@@ -179,16 +185,14 @@ public class User {
             this.Password = Password;
         }
 
-        Builder() {
-           
+        public Builder() {
         }
 
         public Builder setAccountID(String accountID) {
             this.accountID = accountID;
-            return(this);
+            return (this);
         }
 
-       
         public Builder setUsername(String Username) {
             this.Username = Username;
             return (this);
@@ -236,24 +240,27 @@ public class User {
 
         public Builder setRelationshipStatus(String RelationshipStatus) {
             this.RelationshipStatus = RelationshipStatus;
-             return this;
+            return this;
         }
-       
+
         public Builder setNumberOfFriends(int NumberOfFriends) {
             this.NumberOfFriends = NumberOfFriends;
             return this;
         }
-     
-        public Builder setHobbies(List<String> Hobbies) {
-            this.Jobs = Jobs;
-            return this;
-        }
-           
-        public Builder setJobs(List<String> Jobs) {
+
+        public Builder setHobbies(ArrayList<String> Hobbies) {
             this.Hobbies = Hobbies;
             return this;
         }
-        
+
+        public Builder setJobs(Stack<String> jobs) {
+            if (this.Jobs == null) {
+                this.Jobs = new Stack<>();
+            }
+            this.Jobs=jobs;
+            return this;
+        }
+
         public User build() {
             return new User(this);
         }

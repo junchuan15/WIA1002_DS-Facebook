@@ -5,7 +5,7 @@
 package y1s2_assignment;
 
 import java.sql.*;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -28,6 +28,23 @@ public class DatabaseSQL {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public String generateAccountID() {
+        try {
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT MAX(Account_ID) FROM usersdata");
+            if (rs.next()) {
+                int lastAccountID = rs.getInt(1);
+                String accountID = String.format("%05d", lastAccountID + 1);
+                return accountID;
+            }
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "00001";
     }
 
     public boolean isExist(String check) {
@@ -76,7 +93,7 @@ public class DatabaseSQL {
     public User getUserLogin(String loginId) {
         try {
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("SELECT * FROM usersdata WHERE UserName = ? OR EmailAddress = ?");
+            PreparedStatement ps = con.prepareStatement("SELECT * FROM usersdata WHERE  EmailAddress = ? OR ContactNumber = ?");
             ps.setString(1, loginId);
             ps.setString(2, loginId);
             ResultSet rs = ps.executeQuery();
@@ -87,7 +104,19 @@ public class DatabaseSQL {
                         .setUsername(rs.getString("UserName"))
                         .setEmailAddress(rs.getString("EmailAddress"))
                         .setContactNumber(rs.getString("ContactNumber"))
-                        .setPassword(rs.getString("Password"));
+                        .setPassword(rs.getString("Password"))
+                        .setName(rs.getString("Name"))
+                        .setBirthday(rs.getString("Birthday"))
+                        .setAge(rs.getInt("Age"))
+                        .setAddress(rs.getString("Address"))
+                        .setGender(rs.getString("Gender"))
+                        .setRelationshipStatus(rs.getString("Relationship_Status"))
+                        .setNumberOfFriends(rs.getInt("NumberOfFriends"))
+                        .setHobbies(new ArrayList<String>(Arrays.asList(rs.getString("Hobbies").split(","))));
+                List<String> jobsList = Arrays.asList(rs.getString("Jobs").split(","));
+                Stack<String> jobsStack = new Stack<>();
+                jobsStack.addAll(jobsList);
+                builder.setJobs(jobsStack);
 
                 rs.close();
                 ps.close();
@@ -110,22 +139,21 @@ public class DatabaseSQL {
         try {
             connectAndFetchData();
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET Account_ID=?, UserName=?, EmailAddress=?, ContactNumber=?, Password=?, Name=?, Birthday=?, Age=?, Address=?, Gender=?, Relationship_Status=?, Hobbies=?, Jobs=?, NumberOfFriends=? WHERE Account_ID=?");
-            ps.setString(1, user.getAccountID());
-            ps.setString(2, user.getUsername());
-            ps.setString(3, user.getEmailAddress());
-            ps.setString(4, user.getContactNumber());
-            ps.setString(5, user.getPassword());
-            ps.setString(6, user.getName());
-            ps.setString(7, user.getBirthday());
-            ps.setInt(8, user.getAge());
-            ps.setString(9, user.getAddress());
-            ps.setString(10, user.getGender());
-            ps.setString(11, user.getRelationshipStatus());
-            ps.setString(12, user.getHobbies() != null ? String.join(",", user.getHobbies()) : null);
-            ps.setString(13, user.getJobs() != null ? String.join(",", user.getJobs()) : null);
-            ps.setInt(14, user.getNumberOfFriends());
-            ps.setString(15, user.getAccountID());
+            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET UserName=?, EmailAddress=?, ContactNumber=?, Password=?, Name=?, Birthday=?, Age=?, Address=?, Gender=?, Relationship_Status=?, Hobbies=?, Jobs=?, NumberOfFriends=? WHERE Account_ID=?");
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getEmailAddress());
+            ps.setString(3, user.getContactNumber());
+            ps.setString(4, user.getPassword());
+            ps.setString(5, user.getName());
+            ps.setString(6, user.getBirthday());
+            ps.setInt(7, user.getAge());
+            ps.setString(8, user.getAddress());
+            ps.setString(9, user.getGender());
+            ps.setString(10, user.getRelationshipStatus());
+            ps.setString(11, String.join(",", user.getHobbies()));
+            ps.setString(12, String.join(",", user.getJobs()));
+            ps.setInt(13, user.getNumberOfFriends());
+            ps.setString(14, user.getAccountID());
             ps.executeUpdate();
             con.close();
         } catch (SQLException e) {
@@ -167,6 +195,12 @@ public class DatabaseSQL {
                 case "Relationship_Status":
                     ps.setString(1, user.getRelationshipStatus());
                     break;
+                case "Hobbies":
+                     ps.setString(1, String.join(",", user.getHobbies()));
+                    break;
+                case "Jobs":
+                    ps.setString(1, String.join(",", user.getJobs()));
+                    break;
                 default:
                     System.out.println("Invalid column name: " + columnName);
                     return;
@@ -178,5 +212,45 @@ public class DatabaseSQL {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public User getUser(String userID) {
+        User user = null;
+        try {
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String query = "SELECT * FROM usersdata WHERE Account_ID=?";
+            PreparedStatement statement = con.prepareStatement(query);
+            statement.setString(1, userID);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                User.Builder builder = new User.Builder();
+                builder.setAccountID(rs.getString("Account_ID"))
+                        .setUsername(rs.getString("UserName"))
+                        .setEmailAddress(rs.getString("EmailAddress"))
+                        .setContactNumber(rs.getString("ContactNumber"))
+                        .setPassword(rs.getString("Password"))
+                        .setName(rs.getString("Name"))
+                        .setBirthday(rs.getString("Birthday"))
+                        .setAge(rs.getInt("Age"))
+                        .setAddress(rs.getString("Address"))
+                        .setGender(rs.getString("Gender"))
+                        .setRelationshipStatus(rs.getString("Relationship_Status"))
+                        .setNumberOfFriends(rs.getInt("NumberOfFriends"))
+                        .setHobbies(new ArrayList<String>(Arrays.asList(rs.getString("Hobbies").split(","))));
+                List<String> jobsList = Arrays.asList(rs.getString("Jobs").split(","));
+                Stack<String> jobsStack = new Stack<>();
+                jobsStack.addAll(jobsList);
+                builder.setJobs(jobsStack);
+                user = new User(builder);
+            }
+
+            rs.close();
+            statement.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return user;
     }
 }

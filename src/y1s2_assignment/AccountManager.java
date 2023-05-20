@@ -18,7 +18,7 @@ public class AccountManager {
 
     public void UserRegister() {
         System.out.println("==============================================\nSIGN UP now !");
-        String accountID = validate.generateAccountID();
+        String accountID = databaseSQL.generateAccountID();
         String Username = validate.validateUsername();
         String EmailAddress = validate.validateEmail();
         String ContactNumber = validate.validatePhoneNo();
@@ -28,35 +28,34 @@ public class AccountManager {
         System.out.print("Register Successfully\n\n");
     }
 
-   public User userLogin() {
-    System.out.println("==============================================\nLOGIN now! ");
-    boolean isLoggedIn = false;
-    String loginId;
-    while (!isLoggedIn) {
-        System.out.print("Email Address or Phone Number: ");
-        loginId = sc.nextLine();
-        User loggedInUser = databaseSQL.getUserLogin(loginId);
-        if (loggedInUser != null) {
-            System.out.print("Password: ");
-            String loginPw = sc.nextLine();
-            String encryptedLoginPw = validate.encryptPassword(loginPw);
-            if (validate.validatePassword(loginPw, loggedInUser.getPassword())) {
-                System.out.println("Login Successfully!\n");
-                System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
-                if (databaseSQL.getUserLogin(loggedInUser.getName()) == null) {
-                    userSetup(loggedInUser);
+    public User userLogin() {
+        System.out.println("==============================================\nLOGIN now! ");
+        boolean isLoggedIn = false;
+        String loginId;
+        while (!isLoggedIn) {
+            System.out.print("Email Address or Phone Number: ");
+            loginId = sc.nextLine();
+            User loggedInUser = databaseSQL.getUserLogin(loginId);
+            if (loggedInUser != null) {
+                System.out.print("Password: ");
+                String loginPw = sc.nextLine();
+                if (validate.validatePassword(loginPw, loggedInUser.getPassword())) {
+                    System.out.println("Login Successfully!\n");
+                    System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
+                    if (loggedInUser.getName() == null) {
+                        userSetup(loggedInUser);
+                    }
+                    return loggedInUser;
+                } else {
+                    System.out.println("Wrong Password. Please try again.");
                 }
-                return loggedInUser;
             } else {
-                System.out.println("Wrong Password. Please try again.");
+                System.out.println("Invalid Email Address/Phone Number. Please try again.");
             }
-        } else {
-            System.out.println("Invalid Email Address/Phone Number. Please try again.");
         }
+        return null;
     }
-    return null;
-   }
-   
+
     public void userSetup(User loggedInUser) {
         System.out.println("==============================================\nUSER SETUP");
         String accountID = loggedInUser.getAccountID();
@@ -73,13 +72,12 @@ public class AccountManager {
         String gender = validate.validateGender();
         String relationshipStatus = validate.validateRelationshipStatus();
         int numberOfFriends = 0;
-        List<String> hobbies = validate.validateHobby();
+        sc.nextLine();
+        ArrayList<String> hobbies = validate.validateHobby();
         System.out.println("Hobbies: " + hobbies);
-        Stack<String> jobs = validate.validateJobs();
-        System.out.println("Job history:");
-        for (String job : jobs) {
-            System.out.println(job);
-        }
+        String job = validate.validateJobs();
+        Stack<String> jobs = new Stack<>();
+        jobs.push(job);
         System.out.println("Account Set Up successfully. Start your journey now!");
 
         User updateUser = new User.Builder(accountID, username, email, contactNumber, password)
@@ -93,7 +91,7 @@ public class AccountManager {
                 .setHobbies(hobbies)
                 .setJobs(jobs)
                 .build();
-
+        
         databaseSQL.updateUserDetail(updateUser);
     }
 }
