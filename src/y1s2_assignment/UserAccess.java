@@ -59,12 +59,14 @@ public class UserAccess {
                     database.EditUserDetail(loggedInUser, "ContactNumber");
                     break;
                 case 4:
+                    System.out.println("Current Password: " + loggedInUser.getContactNumber());
                     System.out.print("New ");
                     String password = validate.validatePassword();
                     loggedInUser.setPassword(password);
                     database.EditUserDetail(loggedInUser, "Password");
                     break;
                 case 5:
+                    System.out.println("Current Name: " + loggedInUser.getContactNumber());
                     System.out.print("New ");
                     String name = validate.validateName();
                     loggedInUser.setName(name);
@@ -123,10 +125,10 @@ public class UserAccess {
                             } else {
                                 System.out.println("List of Hobby:");
                                 for (int i = 0; i < hobbies.size(); i++) {
-                                    System.out.println(i+1+". "+hobbies.get(i));
+                                    System.out.println(i + 1 + ". " + hobbies.get(i));
                                 }
                                 System.out.print("Enter the index of the hobby to remove (1-" + (hobbies.size()) + "): ");
-                                int removeIndex = sc.nextInt()-1;
+                                int removeIndex = sc.nextInt() - 1;
                                 sc.nextLine();
 
                                 if (removeIndex >= 0 && removeIndex < hobbies.size()) {

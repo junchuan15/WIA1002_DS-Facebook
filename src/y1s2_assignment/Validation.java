@@ -138,6 +138,11 @@ public class Validation {
         return PasswordInput;
     }
 
+    public boolean isAdmin(User registeredUser) {
+        String email_admin = "^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+\\.tfbAdmin@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$";
+        return Validification(registeredUser.getEmailAddress(), email_admin);
+    }
+
     public String validateName() {
         String NameInput = "";
         boolean isValidName = false;
@@ -293,7 +298,7 @@ public class Validation {
     public ArrayList<String> validateHobby() {
         ArrayList<String> hobbies = new ArrayList<>();
         boolean isAddingHobby = false;
-      
+
         while (!isAddingHobby) {
             System.out.print("Enter hobby (type 'done' to finish input): ");
             String hobbyInput = sc.nextLine();
@@ -407,4 +412,5 @@ public class Validation {
             return false;
         }
     }
+
 }

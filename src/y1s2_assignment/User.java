@@ -5,7 +5,6 @@
 package y1s2_assignment;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Stack;
 
 /**
@@ -19,6 +18,7 @@ public class User {
     private String EmailAddress;
     private String ContactNumber;
     private String Password;
+    private String Role;
     private String Name;
     private String Birthday;
     private int Age;
@@ -35,6 +35,7 @@ public class User {
         this.EmailAddress = builder.EmailAddress;
         this.ContactNumber = builder.ContactNumber;
         this.Password = builder.Password;
+        this.Role = builder.Role;
         this.Name = builder.Name;
         this.Birthday = builder.Birthday;
         this.Age = builder.Age;
@@ -44,6 +45,15 @@ public class User {
         this.NumberOfFriends = builder.NumberOfFriends;
         this.Hobbies = builder.Hobbies;
         this.Jobs = builder.Jobs;
+        
+    }
+
+    public String getRole() {
+        return Role;
+    }
+
+    public void setRole(String Role) {
+        this.Role = Role;
     }
 
     public String getAccountID() {
@@ -167,6 +177,7 @@ public class User {
         private String EmailAddress;
         private String ContactNumber;
         private String Password;
+        private String Role; 
         private String Name;
         private String Birthday;
         private int Age;
@@ -177,8 +188,7 @@ public class User {
         private ArrayList<String> Hobbies;
         private Stack<String> Jobs;
 
-        public Builder(String accountID, String Username, String EmailAddress, String ContactNumber, String Password) {
-            this.accountID = accountID;
+        public Builder(String Username, String EmailAddress, String ContactNumber, String Password) {
             this.Username = Username;
             this.EmailAddress = EmailAddress;
             this.ContactNumber = ContactNumber;
@@ -186,6 +196,15 @@ public class User {
         }
 
         public Builder() {
+        }
+
+        public String getRole() {
+            return Role;
+        }
+
+        public Builder setRole(String Role) {
+            this.Role = Role;
+            return (this);
         }
 
         public Builder setAccountID(String accountID) {

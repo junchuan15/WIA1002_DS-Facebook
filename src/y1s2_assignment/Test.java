@@ -53,7 +53,7 @@ public static void main(String[] args) {
             while (!backToMainMenu) {
                 System.out.println("==============================================\nUSER MENU");
                 System.out.println("1. Edit Account");
-                System.out.println("2. Display Account");
+                System.out.println("2. Display Account"); 
                 System.out.println("3. Logout");
                 System.out.print("Enter your choice: ");
                 String choiceStr = sc.nextLine();

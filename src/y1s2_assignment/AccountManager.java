@@ -18,12 +18,20 @@ public class AccountManager {
 
     public void UserRegister() {
         System.out.println("==============================================\nSIGN UP now !");
-        String accountID = databaseSQL.generateAccountID();
         String Username = validate.validateUsername();
         String EmailAddress = validate.validateEmail();
         String ContactNumber = validate.validatePhoneNo();
         String Password = validate.validatePassword();
-        User registeredUser = new User.Builder(accountID, Username, EmailAddress, ContactNumber, Password).build();
+        User registeredUser = new User.Builder(Username, EmailAddress, ContactNumber, Password).build();
+        if (validate.isAdmin(registeredUser)) {
+            registeredUser.setRole("Admin");
+            registeredUser.setAccountID(databaseSQL.generateAccountID(registeredUser.getRole()));
+
+        } else {
+            registeredUser.setRole("User");
+            registeredUser.setAccountID(databaseSQL.generateAccountID(registeredUser.getRole()));
+        }
+
         databaseSQL.registerUser(registeredUser);
         System.out.print("Register Successfully\n\n");
     }
@@ -40,12 +48,41 @@ public class AccountManager {
                 System.out.print("Password: ");
                 String loginPw = sc.nextLine();
                 if (validate.validatePassword(loginPw, loggedInUser.getPassword())) {
-                    System.out.println("Login Successfully!\n");
-                    System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
-                    if (loggedInUser.getName() == null) {
-                        userSetup(loggedInUser);
+                    if (validate.isAdmin(loggedInUser)) {
+                        System.out.println("You are logged in as an admin.");
+                        int attempts = 0;
+                        boolean isSecretCode = false;
+                        while (attempts < 3 && !isSecretCode) {
+                            System.out.print("Enter the secret code: ");
+                            String secretcode = sc.nextLine();
+
+                            if (secretcode.equals("Ilovethefacebook<3")) {
+                                isSecretCode = true;
+                                System.out.println("Secret code authentication successful!");
+
+                                if (loggedInUser.getName() == null) {
+                                    userSetup(loggedInUser);
+                                }
+                                System.out.println("Login Successfully!\n");
+                                System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
+                                return loggedInUser;
+
+                            } else {
+                                attempts++;
+                                System.out.println("Invalid key password. Attempts left: " + (3 - attempts));
+                            }
+                        }
+
+                        System.out.println("Key password authentication failed. Returning to login screen.");
+                    } else {
+                        if (loggedInUser.getName() == null) {
+                            userSetup(loggedInUser);
+                        }
+                        System.out.println("Login Successfully!\n");
+                        System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
+                        System.out.println("You are logged in as a regular user.");
+                        return loggedInUser;
                     }
-                    return loggedInUser;
                 } else {
                     System.out.println("Wrong Password. Please try again.");
                 }
@@ -58,11 +95,6 @@ public class AccountManager {
 
     public void userSetup(User loggedInUser) {
         System.out.println("==============================================\nUSER SETUP");
-        String accountID = loggedInUser.getAccountID();
-        String username = loggedInUser.getUsername();
-        String email = loggedInUser.getEmailAddress();
-        String contactNumber = loggedInUser.getContactNumber();
-        String password = loggedInUser.getPassword();
 
         System.out.println("Please set up your profile.");
         String name = validate.validateName();
@@ -71,27 +103,27 @@ public class AccountManager {
         String address = validate.validateAddress();
         String gender = validate.validateGender();
         String relationshipStatus = validate.validateRelationshipStatus();
-        int numberOfFriends = 0;
-        sc.nextLine();
         ArrayList<String> hobbies = validate.validateHobby();
-        System.out.println("Hobbies: " + hobbies);
         String job = validate.validateJobs();
         Stack<String> jobs = new Stack<>();
         jobs.push(job);
         System.out.println("Account Set Up successfully. Start your journey now!");
 
-        User updateUser = new User.Builder(accountID, username, email, contactNumber, password)
+        User updateUser = new User.Builder(loggedInUser.getUsername(), loggedInUser.getEmailAddress(),
+                loggedInUser.getContactNumber(), loggedInUser.getPassword())
+                .setAccountID(loggedInUser.getAccountID())
+                .setRole(loggedInUser.getRole())
                 .setName(name)
                 .setBirthday(birthday)
                 .setAge(age)
                 .setAddress(address)
                 .setGender(gender)
                 .setRelationshipStatus(relationshipStatus)
-                .setNumberOfFriends(numberOfFriends)
+                .setNumberOfFriends(0)
                 .setHobbies(hobbies)
                 .setJobs(jobs)
                 .build();
-        
+
         databaseSQL.updateUserDetail(updateUser);
     }
 }

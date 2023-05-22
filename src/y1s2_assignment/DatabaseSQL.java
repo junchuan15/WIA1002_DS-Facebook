@@ -4,6 +4,7 @@
  */
 package y1s2_assignment;
 
+import com.mysql.cj.Messages;
 import java.sql.*;
 import java.util.*;
 
@@ -30,21 +31,39 @@ public class DatabaseSQL {
         }
     }
 
-    public String generateAccountID() {
+    public String generateAccountID(String role) {
         try {
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
             Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT MAX(Account_ID) FROM usersdata");
+            String roleCondition = (role.equals("User")) ? "NOT LIKE 'TFBAM%'" : "LIKE 'TFBAM%'";
+            ResultSet rs = stmt.executeQuery("SELECT MAX(Account_ID) FROM usersdata WHERE Account_ID " + roleCondition);
             if (rs.next()) {
-                int lastAccountID = rs.getInt(1);
-                String accountID = String.format("%05d", lastAccountID + 1);
+                String lastAccountID = rs.getString(1);
+                String accountID;
+
+                if (role.equals("User")) {
+                    if (lastAccountID == null) {
+                        return "00001";
+                    } else {
+                        int lastUserID = Integer.parseInt(lastAccountID.substring(1));
+                        accountID = String.format("%05d", lastUserID + 1);
+                    }
+                } else {
+                    if (lastAccountID == null) {
+                        return "TFBAM1";
+                    } else {
+                        int lastAdminID = Integer.parseInt(lastAccountID.substring(5));
+                        accountID = "TFBAM" + (lastAdminID + 1);
+                    }
+                }
+
                 return accountID;
             }
             con.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return "00001";
+        return null;
     }
 
     public boolean isExist(String check) {
@@ -77,12 +96,13 @@ public class DatabaseSQL {
         try {
             connectAndFetchData();
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("INSERT INTO usersdata (Account_ID, UserName, EmailAddress, ContactNumber, Password) VALUES (?, ?, ?, ?, ?)");
+            PreparedStatement ps = con.prepareStatement("INSERT INTO usersdata (Account_ID, UserName, EmailAddress, ContactNumber, Password, Role) VALUES (?, ?, ?, ?, ?, ?)");
             ps.setString(1, user.getAccountID());
             ps.setString(2, user.getUsername());
             ps.setString(3, user.getEmailAddress());
             ps.setString(4, user.getContactNumber());
             ps.setString(5, user.getPassword());
+            ps.setString(6, user.getRole());
             ps.executeUpdate();
             con.close();
         } catch (SQLException e) {
@@ -105,15 +125,26 @@ public class DatabaseSQL {
                         .setEmailAddress(rs.getString("EmailAddress"))
                         .setContactNumber(rs.getString("ContactNumber"))
                         .setPassword(rs.getString("Password"))
+                        .setRole(rs.getString("Role"))
                         .setName(rs.getString("Name"))
                         .setBirthday(rs.getString("Birthday"))
                         .setAge(rs.getInt("Age"))
                         .setAddress(rs.getString("Address"))
                         .setGender(rs.getString("Gender"))
                         .setRelationshipStatus(rs.getString("Relationship_Status"))
-                        .setNumberOfFriends(rs.getInt("NumberOfFriends"))
-                        .setHobbies(new ArrayList<String>(Arrays.asList(rs.getString("Hobbies").split(","))));
-                List<String> jobsList = Arrays.asList(rs.getString("Jobs").split(","));
+                        .setNumberOfFriends(rs.getInt("NumberOfFriends"));
+
+                String hobbiesString = rs.getString("Hobbies");
+                ArrayList<String> hobbies = new ArrayList<>();
+                if (hobbiesString != null) {
+                    hobbies = new ArrayList<>(Arrays.asList(hobbiesString.split(",")));
+                }
+                builder.setHobbies(hobbies);
+                String jobsString = rs.getString("Jobs");
+                List<String> jobsList = new ArrayList<>();
+                if (jobsString != null) {
+                    jobsList = Arrays.asList(jobsString.split(","));
+                }
                 Stack<String> jobsStack = new Stack<>();
                 jobsStack.addAll(jobsList);
                 builder.setJobs(jobsStack);
@@ -139,21 +170,22 @@ public class DatabaseSQL {
         try {
             connectAndFetchData();
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET UserName=?, EmailAddress=?, ContactNumber=?, Password=?, Name=?, Birthday=?, Age=?, Address=?, Gender=?, Relationship_Status=?, Hobbies=?, Jobs=?, NumberOfFriends=? WHERE Account_ID=?");
+            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET UserName=?, EmailAddress=?, ContactNumber=?, Password=?, Role=?, Name=?, Birthday=?, Age=?, Address=?, Gender=?, Relationship_Status=?, Hobbies=?, Jobs=?, NumberOfFriends=? WHERE Account_ID=?");
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getEmailAddress());
             ps.setString(3, user.getContactNumber());
             ps.setString(4, user.getPassword());
-            ps.setString(5, user.getName());
-            ps.setString(6, user.getBirthday());
-            ps.setInt(7, user.getAge());
-            ps.setString(8, user.getAddress());
-            ps.setString(9, user.getGender());
-            ps.setString(10, user.getRelationshipStatus());
-            ps.setString(11, String.join(",", user.getHobbies()));
-            ps.setString(12, String.join(",", user.getJobs()));
-            ps.setInt(13, user.getNumberOfFriends());
-            ps.setString(14, user.getAccountID());
+            ps.setString(5, user.getRole());
+            ps.setString(6, user.getName());
+            ps.setString(7, user.getBirthday());
+            ps.setInt(8, user.getAge());
+            ps.setString(9, user.getAddress());
+            ps.setString(10, user.getGender());
+            ps.setString(11, user.getRelationshipStatus());
+            ps.setString(12, String.join(",", user.getHobbies()));
+            ps.setString(13, String.join(",", user.getJobs()));
+            ps.setInt(14, user.getNumberOfFriends());
+            ps.setString(15, user.getAccountID());
             ps.executeUpdate();
             con.close();
         } catch (SQLException e) {
@@ -196,7 +228,7 @@ public class DatabaseSQL {
                     ps.setString(1, user.getRelationshipStatus());
                     break;
                 case "Hobbies":
-                     ps.setString(1, String.join(",", user.getHobbies()));
+                    ps.setString(1, String.join(",", user.getHobbies()));
                     break;
                 case "Jobs":
                     ps.setString(1, String.join(",", user.getJobs()));
