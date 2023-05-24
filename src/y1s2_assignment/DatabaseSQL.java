@@ -285,4 +285,32 @@ public class DatabaseSQL {
         }
         return user;
     }
+
+    public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList) {
+        try {
+            Connection con = DriverManager.getConnection(url, username, password);
+            Statement statement = con.createStatement();
+            ResultSet rs = statement.executeQuery("SELECT * FROM usersdata WHERE Role <> 'Admin'");
+
+            while (rs.next()) {
+                String accountID = rs.getString("Account_ID");
+                String username = rs.getString("UserName");
+                String email = rs.getString("EmailAddress");
+                String contactNumber = rs.getString("ContactNumber");
+                String name = rs.getString("Name");
+
+                accountIDList.add(accountID);
+                usernameList.add(username);
+                emailList.add(email);
+                contactNumberList.add(contactNumber);
+                nameList.add(name);
+            }
+
+            rs.close();
+            statement.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

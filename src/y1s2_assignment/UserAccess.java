@@ -188,4 +188,10 @@ public class UserAccess {
         System.out.println("");
         jobs.push(currentJob);
     }
+
+    public void Search() {
+        SearchEngine search = new SearchEngine();
+        search.searchUsers();
+}
+    
 }

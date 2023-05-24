@@ -54,7 +54,8 @@ public static void main(String[] args) {
                 System.out.println("==============================================\nUSER MENU");
                 System.out.println("1. Edit Account");
                 System.out.println("2. Display Account"); 
-                System.out.println("3. Logout");
+                System.out.println("3. Search User");
+                System.out.println("4. Logout");
                 System.out.print("Enter your choice: ");
                 String choiceStr = sc.nextLine();
 
@@ -69,6 +70,8 @@ public static void main(String[] args) {
                             userAccess.viewAccount(loggedInUser);
                             break;
                         case 3:
+                            userAccess.Search();
+                        case 4:
                             System.out.println("Log out successfully. Bye~\n");
                             loggedInUser = null; 
                             login = false;
