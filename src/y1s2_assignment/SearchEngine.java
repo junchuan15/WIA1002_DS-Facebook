@@ -20,8 +20,13 @@ public class SearchEngine {
     private ArrayList<String> contactNumberList;
     private ArrayList<String> nameList;
     private DatabaseSQL database = new DatabaseSQL();
+    private UserAccess userAccess = new UserAccess();
+    private User loggedInUser;
+    private Friend friendManager;
 
-    public SearchEngine() {
+    public SearchEngine(User loggedInUser) {
+        this.loggedInUser = loggedInUser;
+        this.friendManager = new Friend(loggedInUser);
         accountIDList = new ArrayList<>();
         usernameList = new ArrayList<>();
         emailList = new ArrayList<>();
@@ -33,37 +38,38 @@ public class SearchEngine {
     public void searchUsers() {
         Scanner sc = new Scanner(System.in);
         boolean exit1 = false;
+
         while (!exit1) {
             System.out.println("==============================================\nSearch for Users: ");
-            System.out.println("1.By account ID");
-            System.out.println("2.By username");
-            System.out.println("3.By email");
-            System.out.println("4.By contact number");
-            System.out.println("5.By name");
-            System.out.println("6.Exit");
+            System.out.println("1. By account ID");
+            System.out.println("2. By username");
+            System.out.println("3. By email");
+            System.out.println("4. By contact number");
+            System.out.println("5. By name");
+            System.out.println("6. Back to Main Menu");
             System.out.print("Enter your choice: ");
             int choice1 = sc.nextInt();
             sc.nextLine();
 
             switch (choice1) {
                 case 1:
-                    searchField(accountIDList, "account ID");
+                    searchField(accountIDList, "Account_ID");
                     break;
                 case 2:
-                    searchField(usernameList, "username");
+                    searchField(usernameList, "UserName");
                     break;
                 case 3:
-                    searchField(emailList, "email");
+                    searchField(emailList, "EmailAddress");
                     break;
                 case 4:
-                    searchField(contactNumberList, "contact number");
+                    searchField(contactNumberList, "ContactNumber");
                     break;
                 case 5:
-                    searchField(nameList, "name");
+                    searchField(nameList, "Name");
                     break;
                 case 6:
                     exit1 = true;
-                    System.out.println("Exit successfully");
+                    System.out.println("Returning to Main Menu...");
                     break;
                 default:
                     System.out.println("Invalid choice! Please try again.");
@@ -72,16 +78,17 @@ public class SearchEngine {
         }
     }
 
-    public void searchField(ArrayList<String> inputList, String field) {
+    public void searchField(ArrayList<String> inputList, String attribute) {
         Scanner sc = new Scanner(System.in);
 
-        System.out.print("Type a " + field + ": ");
+        System.out.print("Type a " + attribute + ": ");
         String search = sc.nextLine();
         display(inputList, search);
 
-        System.out.print("Select the " + field + " you want to find: ");
+        System.out.print("Select the " + attribute + " you want to find: ");
         String correct = sc.nextLine();
-        action(inputList, correct);
+        User searchedUser = database.getUser(attribute, correct);
+        action(inputList, searchedUser);
     }
 
     public static void display(ArrayList<String> inputList, String searchKey) {
@@ -94,16 +101,8 @@ public class SearchEngine {
             row.add(distance);
             similarity.add(row);
         }
-
         Comparator<ArrayList<String>> comparator = Comparator.comparingDouble(row -> Double.parseDouble(row.get(1)));
         similarity.sort(comparator);
-
-        for (ArrayList<String> row : similarity) {
-            System.out.println(row.get(0) + " " + row.get(1));
-        }
-
-        System.out.println();
-
         similarity.sort((row1, row2) -> {
             int compareResult = row1.get(1).compareTo(row2.get(1));
             if (compareResult == 0) {
@@ -191,44 +190,42 @@ public class SearchEngine {
         return false;
     }
 
-    public void action(ArrayList<String> inputList, String input) {
+    public void action(ArrayList<String> inputList, User searchedUser) {
         Scanner sc = new Scanner(System.in);
         boolean exit2 = false;
-        if (inputList.contains(input)) {
-            while (!exit2) {
-                System.out.println("Action: ");
-                System.out.println("1.View profile");
-                System.out.println("2.Add friend");
-                System.out.println("3.Remove friend");
-                System.out.println("4.Chat");
-                System.out.println("5.Exit");
-                System.out.print("Enter your choice [choose a number]: ");
-                int choice2 = sc.nextInt();
-                sc.nextLine();
-                switch (choice2) {
-                    case 1:
-                        //display profile
-                        break;
-                    case 2:
-                        //add friend
-                        break;
-                    case 3:
-                        //remove friend
-                        break;
-                    case 4:
-                        //chat
-                        break;
-                    case 5:
-                        exit2 = true;
-                        System.out.println("Exit successfully");
-                        break;
-                    default:
-                        System.out.println("Invalid choice! Please try again.");
-                        break;
-                }
+
+        while (!exit2) {
+            System.out.println("Action: ");
+            System.out.println("1.View profile");
+            System.out.println("2.Add friend");
+            System.out.println("3.Remove friend");
+            System.out.println("4.Chat");
+            System.out.println("5.Exit");
+            System.out.print("Enter your choice: ");
+            int choice2 = sc.nextInt();
+            sc.nextLine();
+            switch (choice2) {
+                case 1:
+                    userAccess.viewAccount(searchedUser);
+                    break;
+                case 2:
+                    friendManager.sendFriendRequest(searchedUser);
+                    break;
+                case 3:
+                    friendManager.deleteFriend(searchedUser);
+                    break;
+                case 4:
+                    //chat
+                    break;
+                case 5:
+                    exit2 = true;
+                    System.out.println("Exit successfully");
+                    break;
+                default:
+                    System.out.println("Invalid choice! Please try again.");
+                    break;
             }
-        } else {
-            System.out.println("This search key is not available");
         }
+
     }
 }

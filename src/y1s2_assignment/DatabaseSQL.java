@@ -17,7 +17,6 @@ public class DatabaseSQL {
     private String url = "jdbc:mysql://localhost:3306/users";
     private String username = "root";
     private String password = "Facebook123!";
-    private Object User;
 
     public void connectAndFetchData() {
         try {
@@ -69,10 +68,11 @@ public class DatabaseSQL {
     public boolean isExist(String check) {
         try {
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("SELECT * FROM usersdata WHERE UserName = ? OR EmailAddress = ? OR ContactNumber = ?");
+            PreparedStatement ps = con.prepareStatement("SELECT * FROM usersdata WHERE UserName = ? OR EmailAddress = ? OR ContactNumber = ? OR Account_ID = ?");
             ps.setString(1, check);
             ps.setString(2, check);
             ps.setString(3, check);
+            ps.setString(4, check);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -140,6 +140,7 @@ public class DatabaseSQL {
                     hobbies = new ArrayList<>(Arrays.asList(hobbiesString.split(",")));
                 }
                 builder.setHobbies(hobbies);
+
                 String jobsString = rs.getString("Jobs");
                 List<String> jobsList = new ArrayList<>();
                 if (jobsString != null) {
@@ -148,6 +149,27 @@ public class DatabaseSQL {
                 Stack<String> jobsStack = new Stack<>();
                 jobsStack.addAll(jobsList);
                 builder.setJobs(jobsStack);
+
+                String friendsString = rs.getString("Friends");
+                ArrayList<String> friends = new ArrayList<>();
+                if (friendsString != null) {
+                    friends = new ArrayList<>(Arrays.asList(friendsString.split(",")));
+                }
+                builder.setFriends(friends);
+
+                String sentRequestsString = rs.getString("SentRequests");
+                ArrayList<String> sentRequests = new ArrayList<>();
+                if (sentRequestsString != null) {
+                    sentRequests = new ArrayList<>(Arrays.asList(sentRequestsString.split(",")));
+                }
+                builder.setSentRequests(sentRequests);
+
+                String receivedRequestsString = rs.getString("ReceivedRequests");
+                ArrayList<String> receivedRequests = new ArrayList<>();
+                if (receivedRequestsString != null) {
+                    receivedRequests = new ArrayList<>(Arrays.asList(receivedRequestsString.split(",")));
+                }
+                builder.setReceivedRequests(receivedRequests);
 
                 rs.close();
                 ps.close();
@@ -170,7 +192,7 @@ public class DatabaseSQL {
         try {
             connectAndFetchData();
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET UserName=?, EmailAddress=?, ContactNumber=?, Password=?, Role=?, Name=?, Birthday=?, Age=?, Address=?, Gender=?, Relationship_Status=?, Hobbies=?, Jobs=?, NumberOfFriends=? WHERE Account_ID=?");
+            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET UserName=?, EmailAddress=?, ContactNumber=?, Password=?, Role=?, Name=?, Birthday=?, Age=?, Address=?, Gender=?, Relationship_Status=?, Hobbies=?, Jobs=?, NumberOfFriends=?, Friends=?, SentRequests=?, ReceivedRequests=? WHERE Account_ID=?");
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getEmailAddress());
             ps.setString(3, user.getContactNumber());
@@ -185,7 +207,10 @@ public class DatabaseSQL {
             ps.setString(12, String.join(",", user.getHobbies()));
             ps.setString(13, String.join(",", user.getJobs()));
             ps.setInt(14, user.getNumberOfFriends());
-            ps.setString(15, user.getAccountID());
+            ps.setString(15, String.join(",", user.getFriends()));
+            ps.setString(16, String.join(",", user.getSentRequests()));
+            ps.setString(17, String.join(",", user.getReceivedRequests()));
+            ps.setString(18, user.getAccountID());
             ps.executeUpdate();
             con.close();
         } catch (SQLException e) {
@@ -246,46 +271,6 @@ public class DatabaseSQL {
         }
     }
 
-    public User getUser(String userID) {
-        User user = null;
-        try {
-            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            String query = "SELECT * FROM usersdata WHERE Account_ID=?";
-            PreparedStatement statement = con.prepareStatement(query);
-            statement.setString(1, userID);
-            ResultSet rs = statement.executeQuery();
-
-            if (rs.next()) {
-                User.Builder builder = new User.Builder();
-                builder.setAccountID(rs.getString("Account_ID"))
-                        .setUsername(rs.getString("UserName"))
-                        .setEmailAddress(rs.getString("EmailAddress"))
-                        .setContactNumber(rs.getString("ContactNumber"))
-                        .setPassword(rs.getString("Password"))
-                        .setName(rs.getString("Name"))
-                        .setBirthday(rs.getString("Birthday"))
-                        .setAge(rs.getInt("Age"))
-                        .setAddress(rs.getString("Address"))
-                        .setGender(rs.getString("Gender"))
-                        .setRelationshipStatus(rs.getString("Relationship_Status"))
-                        .setNumberOfFriends(rs.getInt("NumberOfFriends"))
-                        .setHobbies(new ArrayList<String>(Arrays.asList(rs.getString("Hobbies").split(","))));
-                List<String> jobsList = Arrays.asList(rs.getString("Jobs").split(","));
-                Stack<String> jobsStack = new Stack<>();
-                jobsStack.addAll(jobsList);
-                builder.setJobs(jobsStack);
-                user = new User(builder);
-            }
-
-            rs.close();
-            statement.close();
-            con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return user;
-    }
-
     public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList) {
         try {
             Connection con = DriverManager.getConnection(url, username, password);
@@ -312,5 +297,216 @@ public class DatabaseSQL {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public User getUser(String attribute, String value) {
+        User user = null;
+        try {
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String query = "SELECT * FROM usersdata WHERE " + attribute + "=?";
+            PreparedStatement statement = con.prepareStatement(query);
+            statement.setString(1, value);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                User.Builder builder = new User.Builder();
+                builder.setAccountID(rs.getString("Account_ID"))
+                        .setUsername(rs.getString("UserName"))
+                        .setEmailAddress(rs.getString("EmailAddress"))
+                        .setContactNumber(rs.getString("ContactNumber"))
+                        .setPassword(rs.getString("Password"))
+                        .setName(rs.getString("Name"))
+                        .setBirthday(rs.getString("Birthday"))
+                        .setAge(rs.getInt("Age"))
+                        .setAddress(rs.getString("Address"))
+                        .setGender(rs.getString("Gender"))
+                        .setRelationshipStatus(rs.getString("Relationship_Status"))
+                        .setNumberOfFriends(rs.getInt("NumberOfFriends"))
+                        .setHobbies(new ArrayList<String>(Arrays.asList(rs.getString("Hobbies").split(","))))
+                        .setFriends(new ArrayList<String>(Arrays.asList(rs.getString("Friends").split(","))))
+                        .setSentRequests(new ArrayList<String>(Arrays.asList(rs.getString("SentRequests").split(","))))
+                        .setReceivedRequests(new ArrayList<String>(Arrays.asList(rs.getString("ReceivedRequests").split(","))));
+
+                List<String> jobsList = Arrays.asList(rs.getString("Jobs").split(","));
+                Stack<String> jobsStack = new Stack<>();
+                jobsStack.addAll(jobsList);
+                builder.setJobs(jobsStack);
+
+                user = new User(builder);
+            }
+
+            rs.close();
+            statement.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return user;
+    }
+
+    public void deleteUserSQL(User user) {
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String deleteQuery = "DELETE FROM usersdata WHERE Account_ID = ?";
+            try ( PreparedStatement statement = connection.prepareStatement(deleteQuery)) {
+                statement.setString(1, user.getAccountID());
+                int rowsAffected = statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            System.out.println("An error occurred while deleting the user from the database: " + e.getMessage());
+        }
+    }
+
+    public void createVerticesFromDatabase() {
+        ConnectionGraph graph = new ConnectionGraph();
+        try {
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            Statement statement = con.createStatement();
+            ResultSet rs = statement.executeQuery("SELECT UserName FROM usersdata");
+
+            while (rs.next()) {
+                String username = rs.getString("UserName");
+                graph.addVertex(username);
+            }
+
+            rs.close();
+            statement.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateSentRequests(User loggedInUser) {
+        try {
+            Connection con = DriverManager.getConnection(url, username, password);
+            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET SentRequests = ? WHERE Account_ID = ?");
+            ps.setString(1, String.join(",", loggedInUser.getSentRequests()));
+            ps.setString(2, loggedInUser.getAccountID());
+            ps.executeUpdate();
+            ps.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateReceivedRequests(User user) {
+        try {
+            Connection con = DriverManager.getConnection(url, username, password);
+            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET ReceivedRequests = ? WHERE Account_ID = ?");
+            ps.setString(1, String.join(",", user.getReceivedRequests()));
+            ps.setString(2, user.getAccountID());
+            ps.executeUpdate();
+            ps.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateNumFriendsAndFriends(User user) {
+        try {
+            connectAndFetchData();
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET NumberOfFriends=?, Friends=? WHERE Account_ID=?");
+            ps.setInt(1, user.getNumberOfFriends());
+            ps.setString(2, String.join(",", user.getFriends()));
+            ps.setString(3, user.getAccountID());
+            ps.executeUpdate();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public String getFriendList(String name) {
+    try {
+        Connection con = DriverManager.getConnection(url, username, password);
+        PreparedStatement ps = con.prepareStatement("SELECT Friends FROM usersdata WHERE Username = ?");
+        ps.setString(1, name);
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) {
+            String friendList = rs.getString("Friends");
+            ps.close();
+            con.close();
+            return friendList;
+        }
+
+        ps.close();
+        con.close();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return "";
+}
+    
+     public String getSentRequests(String name) {
+        try {
+            Connection con = DriverManager.getConnection(url, username, password);
+            PreparedStatement ps = con.prepareStatement("SELECT SentRequests FROM usersdata WHERE Username = ?");
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+            String SentRequests = rs.getString("SentRequests");
+            ps.close();
+            con.close();
+            return SentRequests;
+        }
+
+        ps.close();
+        con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+     
+     public String getReceivedRequests(String name) {
+        try {
+            Connection con = DriverManager.getConnection(url, username, password);
+            PreparedStatement ps = con.prepareStatement("SELECT SentRequests FROM usersdata WHERE Username = ?");
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+            String ReceivedRequests = rs.getString("ReceivedRequests");
+            ps.close();
+            con.close();
+            return ReceivedRequests;
+        }
+
+        ps.close();
+        con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+     
+      public int getNumberOfFriends(String name) {
+        try {
+            Connection con = DriverManager.getConnection(url, username, password);
+            PreparedStatement ps = con.prepareStatement("SELECT NumberOfFriends FROM usersdata WHERE UserName = ?");
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                int numberOfFriends = rs.getInt("NumberOfFriends");
+                ps.close();
+                con.close();
+                return numberOfFriends;
+            }
+
+            ps.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 }

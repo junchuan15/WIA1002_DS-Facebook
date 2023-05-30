@@ -13,10 +13,15 @@ import java.util.Scanner;
  */
 public class UserAccess {
 
-    private User loggedInUser;
+    protected User loggedInUser;
     private DatabaseSQL database;
 
     public UserAccess(User loggedInUser) {
+        this.loggedInUser = loggedInUser;
+        this.database = new DatabaseSQL();
+    }
+
+    public UserAccess() {
         this.loggedInUser = loggedInUser;
         this.database = new DatabaseSQL();
     }
@@ -167,31 +172,40 @@ public class UserAccess {
         }
     }
 
-    public void viewAccount(User selectedUser) {
-        User user = database.getUser(selectedUser.getAccountID());
-        System.out.println("==============================================\nDisplaying user profile:");
-        System.out.println("Name: " + user.getName());
-        System.out.println("Username: " + user.getUsername());
-        System.out.println("Email Address: " + user.getEmailAddress());
-        System.out.println("Contact Number: " + user.getContactNumber());
-        System.out.println("Birthday: " + user.getBirthday());
-        System.out.println("Age: " + user.getAge());
-        System.out.println("Address: " + user.getAddress());
-        System.out.println("Gender: " + user.getGender());
-        System.out.println("Relationship Status: " + user.getRelationshipStatus());
-        System.out.println("Number of Friends: " + user.getNumberOfFriends());
-        System.out.println("Hobbies: " + user.getHobbies());
-        Stack<String> jobs = user.getJobs();
-        String currentJob = jobs.pop();
-        System.out.println("Current Job: " + currentJob);
-        System.out.println("Previous Jobs History: " + jobs);
-        System.out.println("");
-        jobs.push(currentJob);
+    public void viewAccount(User loggedInUser) {
+        User user = database.getUser("Account_ID", loggedInUser.getAccountID());
+        if (user != null) {
+            System.out.println("==============================================\nDisplaying user profile:");
+            System.out.println("Account ID: " + user.getAccountID());
+            System.out.println("Name: " + user.getName());
+            System.out.println("Username: " + user.getUsername());
+            System.out.println("Email Address: " + user.getEmailAddress());
+            System.out.println("Contact Number: " + user.getContactNumber());
+            System.out.println("Birthday: " + user.getBirthday());
+            System.out.println("Age: " + user.getAge());
+            System.out.println("Address: " + user.getAddress());
+            System.out.println("Gender: " + user.getGender());
+            System.out.println("Relationship Status: " + user.getRelationshipStatus());
+            System.out.println("Number of Friends: " + user.getNumberOfFriends());
+            System.out.println("Hobbies: " + user.getHobbies());
+            Stack<String> jobs = user.getJobs();
+            String currentJob = jobs.pop();
+            System.out.println("Current Job: " + currentJob);
+            System.out.println("Previous Jobs History: " + jobs);
+            System.out.println("");
+            jobs.push(currentJob);
+        } else {
+            System.out.println("User not found.");
+        }
     }
 
     public void Search() {
-        SearchEngine search = new SearchEngine();
+        SearchEngine search = new SearchEngine(loggedInUser);
         search.searchUsers();
-}
+    }
     
+    public void Friend(){
+        Friend friend = new Friend(loggedInUser);
+        friend.friendMenu();
+    }
 }

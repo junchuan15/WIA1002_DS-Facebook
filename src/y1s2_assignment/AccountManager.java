@@ -122,6 +122,9 @@ public class AccountManager {
                 .setNumberOfFriends(0)
                 .setHobbies(hobbies)
                 .setJobs(jobs)
+                .setFriends(new ArrayList<>()) 
+                .setSentRequests(new ArrayList<>()) 
+                .setReceivedRequests(new ArrayList<>())
                 .build();
 
         databaseSQL.updateUserDetail(updateUser);

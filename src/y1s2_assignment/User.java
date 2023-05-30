@@ -28,6 +28,9 @@ public class User {
     private int NumberOfFriends;
     private ArrayList<String> Hobbies;
     private Stack<String> Jobs;
+    private ArrayList<String> Friends;
+    private ArrayList<String> SentRequests;
+    private ArrayList<String> ReceivedRequests;
 
     public User(Builder builder) {
         this.accountID = builder.accountID;
@@ -45,7 +48,10 @@ public class User {
         this.NumberOfFriends = builder.NumberOfFriends;
         this.Hobbies = builder.Hobbies;
         this.Jobs = builder.Jobs;
-        
+        this.Friends = builder.Friends;
+        this.SentRequests = builder.SentRequests;
+        this.ReceivedRequests = builder.ReceivedRequests;
+
     }
 
     public String getRole() {
@@ -107,6 +113,12 @@ public class User {
     public int getNumberOfFriends() {
         return NumberOfFriends;
     }
+
+    public void setNumberOfFriends(int NumberOfFriends) {
+        this.NumberOfFriends = NumberOfFriends;
+    }
+    
+    
 
     public ArrayList<String> getHobbies() {
         return Hobbies;
@@ -170,6 +182,30 @@ public class User {
         this.Jobs = Jobs;
     }
 
+    public ArrayList<String> getFriends() {
+        return Friends;
+    }
+
+    public void setFriends(ArrayList<String> Friends) {
+        this.Friends = Friends;
+    }
+
+    public ArrayList<String> getSentRequests() {
+        return SentRequests;
+    }
+
+    public void setSentRequests(ArrayList<String> SentRequests) {
+        this.SentRequests = SentRequests;
+    }
+
+    public ArrayList<String> getReceivedRequests() {
+        return ReceivedRequests;
+    }
+
+    public void setReceivedRequests(ArrayList<String> ReceivedRequests) {
+        this.ReceivedRequests = ReceivedRequests;
+    }
+
     public static class Builder {
 
         private String accountID;
@@ -177,7 +213,7 @@ public class User {
         private String EmailAddress;
         private String ContactNumber;
         private String Password;
-        private String Role; 
+        private String Role;
         private String Name;
         private String Birthday;
         private int Age;
@@ -187,6 +223,9 @@ public class User {
         private int NumberOfFriends;
         private ArrayList<String> Hobbies;
         private Stack<String> Jobs;
+        private ArrayList<String> Friends;
+        private ArrayList<String> SentRequests;
+        private ArrayList<String> ReceivedRequests;
 
         public Builder(String Username, String EmailAddress, String ContactNumber, String Password) {
             this.Username = Username;
@@ -276,7 +315,33 @@ public class User {
             if (this.Jobs == null) {
                 this.Jobs = new Stack<>();
             }
-            this.Jobs=jobs;
+            this.Jobs = jobs;
+            return this;
+        }
+
+        public Builder setFriends(ArrayList<String> Friends) {
+            if (this.Friends == null) {
+                this.Friends = new ArrayList<>();
+            }
+            this.Friends = Friends;
+            return this;
+        }
+
+        public Builder setSentRequests(ArrayList<String> SentRequests) {
+            this.SentRequests = SentRequests;
+            if (this.SentRequests == null) {
+                this.SentRequests = new ArrayList<>();
+            }
+            this.SentRequests = SentRequests;
+            return this;
+        }
+
+        public Builder setReceivedRequests(ArrayList<String> ReceivedRequests) {
+            this.ReceivedRequests = ReceivedRequests;
+            if (this.ReceivedRequests == null) {
+                this.ReceivedRequests = new ArrayList<>();
+            }
+            this.ReceivedRequests = this.ReceivedRequests;
             return this;
         }
 
