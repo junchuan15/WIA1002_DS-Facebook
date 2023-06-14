@@ -22,6 +22,7 @@ public class DatabaseSQL {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection con = DriverManager.getConnection(url, username, password);
+           // createTableIfNotExists(con);
             con.close();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -30,7 +31,22 @@ public class DatabaseSQL {
         }
     }
 
-    
+    /* Need to update as debug
+    private void createTableIfNotExists(Connection con) throws SQLException {
+        Statement stmt = con.createStatement();
+        String createTableQuery = "CREATE TABLE IF NOT EXISTS usersdata (" +
+                "Account_ID VARCHAR(10) PRIMARY KEY," +
+                "UserName VARCHAR(50) NOT NULL," +
+                "EmailAddress VARCHAR(50) NOT NULL," +
+                "ContactNumber VARCHAR(20) NOT NULL," +
+                "Password VARCHAR(255) NOT NULL," +
+                "Role VARCHAR(20) NOT NULL," +
+                // Add more columns as needed
+                ")";
+        stmt.executeUpdate(createTableQuery);
+        stmt.close();
+    }*/
+
     public String generateAccountID(String role) {
         try {
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");

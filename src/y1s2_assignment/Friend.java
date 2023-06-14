@@ -17,12 +17,14 @@ public class Friend {
 
     private User loggedInUser;
     private DatabaseSQL database;
+    private UserAccess userAccess;
     private ConnectionGraph graph;
 
     public Friend(User loggedInUser) {
         this.loggedInUser = loggedInUser;
         this.database = new DatabaseSQL();
         this.graph = database.createGraph();
+        this.userAccess = userAccess;
     }
 
     public void sendFriendRequest(User user) {
@@ -121,12 +123,13 @@ public class Friend {
         Scanner scanner = new Scanner(System.in);
         boolean exit = false;
         while (!exit) {
-            System.out.println("Friend Menu:");
+            
+            System.out.println("==============================================\nFRIEND MENU:");
             System.out.println("1. Show Friend List");
             System.out.println("2. Show Pending Friend Requests");
             System.out.println("3. Show Sent Friend Requests");
-            System.out.println("4. Send Friend Request");
-            System.out.println("0. Exit");
+            System.out.println("4. Show Friend Recommendation");
+            System.out.println("5. Back to Main Menu.");
             System.out.print("Enter your choice: ");
             int choice = scanner.nextInt();
             scanner.nextLine();
@@ -141,9 +144,9 @@ public class Friend {
                     showSentRequests();
                     break;
                 case 4:
-                    sendFriendRequest();
+                    displayfriendRecommend();
                     break;
-                case 0:
+                case 5:
                     exit = true;
                     System.out.println("Exiting Friend Menu.");
                     break;
@@ -152,20 +155,6 @@ public class Friend {
                     break;
             }
         }
-    }
-
-    public void sendFriendRequest() {
-        System.out.print("Enter the username of the user you want to send a friend request to: ");
-        Scanner scanner = new Scanner(System.in);
-        String username = scanner.nextLine();
-
-        User user = database.getUser("Username", username);
-        if (user == null) {
-            System.out.println("User not found.");
-            return;
-        }
-
-        sendFriendRequest(user);
     }
 
     public void showFriendList() {
@@ -193,8 +182,8 @@ public class Friend {
             System.out.println((i + 1) + ". " + sent);
         }
     }
-    
-     public void handleFriendRequests() {
+
+    public void handleFriendRequests() {
         ArrayList<String> pending = loggedInUser.getReceivedRequests();
         if (pending.isEmpty()) {
             System.out.println("No pending friend requests.");
@@ -227,22 +216,80 @@ public class Friend {
         String friendToProcess = pending.get(requestIndex - 1);
         pendingFriendRequest(friendToProcess, String.valueOf(choice));
     }
-     
-    public List< String> getMutualFriends(User user) {
-        List< String> mutualFriendNames = new ArrayList<>();
-        ArrayList< String> friends = loggedInUser.getFriends();
-        ArrayList< String> otherUserFriends = user.getFriends();
 
-        for (String friend : friends) {
-            if (otherUserFriends.contains(friend)) {
-                mutualFriendNames.add(friend);
+    public void action(User user) {
+        Scanner sc = new Scanner(System.in);
+        boolean exit2 = false;
+
+        while (!exit2) {
+            System.out.println("Action: ");
+            System.out.println("1. View profile");
+            System.out.println("2. Add friend");
+            System.out.println("3. Remove friend");
+            System.out.println("4. Chat");
+            System.out.println("5. Back");
+            System.out.print("Enter your choice: ");
+            int choice2 = sc.nextInt();
+            sc.nextLine();
+            switch (choice2) {
+                case 1:
+                    userAccess.viewAccount(user);
+                    break;
+                case 2:
+                    sendFriendRequest(user);
+                    break;
+                case 3:
+                    deleteFriend(user);
+                    break;
+                case 4:
+                    Chat chat =new Chat(loggedInUser);
+                    chat.startChatting(user);
+                    break;
+                case 5:
+                    exit2 = true;
+                    System.out.println("Exit successfully");
+                    break;
+                default:
+                    System.out.println("Invalid choice! Please try again.");
+                    break;
+            }
+        }
+    }
+
+    // follow friend degree
+    public void displayfriendRecommend() {
+         List<User> friend = graph.getRecommendedConnections(loggedInUser);
+
+    if (friend.isEmpty()) {
+        System.out.println("No friend recommendations available.");
+    } else {
+        System.out.println("Friend Recommendations:");
+        int count = 1;
+        for (User recommendedUser : friend) {
+            System.out.println(count + ". " + recommendedUser.getUsername());
+            count++;
+        }
+
+        Scanner sc = new Scanner(System.in);
+        int friendChoice = 0;
+
+        while (friendChoice < 1 || friendChoice > friend.size()) {
+            System.out.print("Choose a friend from the recommendation list (enter the number): ");
+            friendChoice = sc.nextInt();
+            sc.nextLine();
+
+            if (friendChoice < 1 || friendChoice > friend.size()) {
+                System.out.println("Invalid choice! Please try again.");
             }
         }
 
-        return mutualFriendNames;
+        User selectedFriend = friend.get(friendChoice - 1);
+        action(selectedFriend);
+    }
     }
 
-    public List< String> friendRecommendation(User user, String option) {
+    // implement the scoring method for public recommendation
+    /* public List< String> friendRecommendation(User user, String option) {
         List<String> friendRecommendations = new ArrayList<>();
 
         if (option.equals("mutualFriend")) {
@@ -355,5 +402,5 @@ public class Friend {
         }
 
         return friendRecommendations;
-    }
+    }*/
 }

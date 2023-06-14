@@ -41,7 +41,7 @@ public class SearchEngine {
         boolean exit1 = false;
 
         while (!exit1) {
-            System.out.println("==============================================\nSearch for Users: ");
+            System.out.println("==============================================\nSEARCH: ");
             System.out.println("1. By account ID");
             System.out.println("2. By username");
             System.out.println("3. By email");
@@ -79,10 +79,10 @@ public class SearchEngine {
         }
     }
 
-    public void searchField(ArrayList<String> inputList,  String attribute) {
+    public void searchField(ArrayList<String> inputList, String attribute) {
         Scanner sc = new Scanner(System.in);
 
-         String search = null;
+        String search = null;
         while (search == null || search.isEmpty()) {
             System.out.print("Type a " + attribute + ": ");
             search = sc.nextLine();
@@ -93,7 +93,7 @@ public class SearchEngine {
 
         display(inputList, search);
 
-         String correct = null;
+        String correct = null;
         while (correct == null || correct.isEmpty()) {
             System.out.print("Select the " + attribute + " you want to find: ");
             correct = sc.nextLine();
@@ -102,34 +102,39 @@ public class SearchEngine {
             }
         }
 
+        Friend friend = new Friend(loggedInUser);
         User searchedUser = database.getUser(attribute, correct);
-        action(inputList, searchedUser);
+        friend.action(searchedUser);
     }
 
-    public void display(ArrayList<String> inputList,  String searchKey) {
+    public void display(ArrayList<String> inputList, String searchKey) {
         ArrayList<ArrayList<String>> similarity = new ArrayList<>();
-        ArrayList< String> row1 = new ArrayList<>();
-        ArrayList< String> row2 = new ArrayList<>();
-        row1 = inputList;
+        ArrayList<String> row1 = new ArrayList<>(inputList);
+        ArrayList<String> row2 = new ArrayList<>();
+
         for (int i = 0; i < row1.size(); i++) {
             String temp = Double.toString(DamerauLevenshteinDistance(searchKey, row1.get(i)));
             row2.add(temp);
         }
+
         for (int i = 0; i < row1.size(); i++) {
-            ArrayList< String> row = new ArrayList<>();
+            ArrayList<String> row = new ArrayList<>();
             row.add(row1.get(i));
             row.add(row2.get(i));
             similarity.add(row);
         }
+
         Comparator<ArrayList<String>> comparator = new Comparator<ArrayList<String>>() {
             @Override
-            public int compare(ArrayList< String> row1, ArrayList< String> row2) {
+            public int compare(ArrayList<String> row1, ArrayList<String> row2) {
                 Double distance1 = Double.parseDouble(row1.get(1));
                 Double distance2 = Double.parseDouble(row2.get(1));
                 return distance1.compareTo(distance2);
             }
         };
+
         Collections.sort(similarity, comparator);
+
         if (similarity.size() >= 10) {
             for (int i = 0; i < 10; i++) {
                 System.out.println(similarity.get(i).get(0));
@@ -141,7 +146,7 @@ public class SearchEngine {
         }
     }
 
-    public double DamerauLevenshteinDistance( String searchKey,  String element) {
+    public double DamerauLevenshteinDistance(String searchKey, String element) {
         if (element.equals(searchKey)) {
             return 0;
         } else if (element.startsWith(searchKey) || element.endsWith(searchKey)) {
@@ -174,7 +179,7 @@ public class SearchEngine {
         return formula(searchKey, element);
     }
 
-    public static int formula( String searchKey,  String element) {
+    public static int formula(String searchKey, String element) {
         int[][] distance = new int[searchKey.length() + 1][element.length() + 1];
         int cost = 0;
         for (int i = 0; i <= searchKey.length(); i++) {
@@ -203,7 +208,7 @@ public class SearchEngine {
         return distance[searchKey.length()][element.length()];
     }
 
-    public static boolean match(String searchKey,  String element) {
+    public static boolean match(String searchKey, String element) {
         for (int i = 0; i < searchKey.length(); i++) {
             char ch = searchKey.charAt(i);
             if (element.contains(Character.toString(ch))) {
@@ -213,42 +218,7 @@ public class SearchEngine {
         return false;
     }
 
-    public void action(ArrayList<String> inputList, User searchedUser) {
-        Scanner sc = new Scanner(System.in);
-        boolean exit2 = false;
-
-        while (!exit2) {
-            System.out.println("Action: ");
-            System.out.println("1.View profile");
-            System.out.println("2.Add friend");
-            System.out.println("3.Remove friend");
-            System.out.println("4.Chat");
-            System.out.println("5.Exit");
-            System.out.print("Enter your choice: ");
-            int choice2 = sc.nextInt();
-            sc.nextLine();
-            switch (choice2) {
-                case 1:
-                    userAccess.viewAccount(searchedUser);
-                    break;
-                case 2:
-                    friendManager.sendFriendRequest(searchedUser);
-                    break;
-                case 3:
-                    friendManager.deleteFriend(searchedUser);
-                    break;
-                case 4:
-                    //chat
-                    break;
-                case 5:
-                    exit2 = true;
-                    System.out.println("Exit successfully");
-                    break;
-                default:
-                    System.out.println("Invalid choice! Please try again.");
-                    break;
-            }
-        }
-
+    public void action(User searchedUser) {
+        friendManager.action(searchedUser);
     }
 }

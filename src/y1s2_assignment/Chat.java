@@ -233,6 +233,7 @@ public class Chat {
             return; // Return to the main menu
         }
 
+        // Compare and display the latest time on top
         /* friendObjects.sort(Comparator.comparing((User friend) -> {
         String fileName = generateChatHistoryFileName(friend);
         if (fileName != null && Files.exists(Paths.get(fileName))) {
