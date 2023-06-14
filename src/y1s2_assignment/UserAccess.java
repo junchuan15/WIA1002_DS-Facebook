@@ -47,35 +47,30 @@ public class UserAccess {
                     System.out.print("New ");
                     String username = validate.validateUsername();
                     loggedInUser.setUsername(username);
-                    database.EditUserDetail(loggedInUser, "UserName");
                     break;
                 case 2:
                     System.out.println("Current Email Address: " + loggedInUser.getEmailAddress());
                     System.out.print("New ");
                     String email = validate.validateEmail();
                     loggedInUser.setEmailAddress(email);
-                    database.EditUserDetail(loggedInUser, "EmailAddress");
                     break;
                 case 3:
                     System.out.println("Current Contact Number: " + loggedInUser.getContactNumber());
                     System.out.print("New ");
                     String contactnumber = validate.validatePhoneNo();
                     loggedInUser.setContactNumber(contactnumber);
-                    database.EditUserDetail(loggedInUser, "ContactNumber");
                     break;
                 case 4:
                     System.out.println("Current Password: " + loggedInUser.getContactNumber());
                     System.out.print("New ");
                     String password = validate.validatePassword();
                     loggedInUser.setPassword(password);
-                    database.EditUserDetail(loggedInUser, "Password");
                     break;
                 case 5:
                     System.out.println("Current Name: " + loggedInUser.getContactNumber());
                     System.out.print("New ");
                     String name = validate.validateName();
                     loggedInUser.setName(name);
-                    database.EditUserDetail(loggedInUser, "Name");
                     break;
                 case 6:
                     System.out.println("Current Birthday: " + loggedInUser.getBirthday());
@@ -83,32 +78,27 @@ public class UserAccess {
                     String birthday = validate.validateBirthday();
                     loggedInUser.setBirthday(birthday);
                     loggedInUser.setAge(validate.calculateAge(birthday));
-                    database.EditUserDetail(loggedInUser, "Birthday");
-                    database.EditUserDetail(loggedInUser, "Age");
                     break;
                 case 7:
                     System.out.println("Current Address: " + loggedInUser.getAddress());
                     System.out.print("New ");
                     String address = validate.validateAddress();
                     loggedInUser.setAddress(address);
-                    database.EditUserDetail(loggedInUser, "Address");
                     break;
                 case 8:
                     System.out.println("Current Gender: " + loggedInUser.getGender());
                     System.out.print("New ");
                     String gender = validate.validateGender();
                     loggedInUser.setGender(gender);
-                    database.EditUserDetail(loggedInUser, "Gender");
                     break;
                 case 9:
                     System.out.println("Current Relationship Status: " + loggedInUser.getRelationshipStatus());
                     System.out.print("New ");
                     String relationshipStatus = validate.validateRelationshipStatus();
                     loggedInUser.setRelationshipStatus(relationshipStatus);
-                    database.EditUserDetail(loggedInUser, "Relationship_Status");
                     break;
                 case 10:
-                    ArrayList<String> hobbies = loggedInUser.getHobbies();
+                    ArrayList< String> hobbies = loggedInUser.getHobbies();
                     System.out.println("Current Hobbies: " + hobbies);
                     System.out.println("1. Add Hobby");
                     System.out.println("2. Remove Hobby");
@@ -117,11 +107,10 @@ public class UserAccess {
                     sc.nextLine();
                     switch (hobbyChoice) {
                         case 1:
-                            ArrayList<String> addHobby = new ArrayList<>();
+                            ArrayList< String> addHobby = new ArrayList<>();
                             addHobby = validate.validateHobby();
                             hobbies.addAll(addHobby);
                             loggedInUser.setHobbies(hobbies);
-                            database.EditUserDetail(loggedInUser, "Hobbies");
                             break;
 
                         case 2:
@@ -140,7 +129,6 @@ public class UserAccess {
                                     String hobbyToRemove = hobbies.get(removeIndex);
                                     hobbies.remove(removeIndex);
                                     loggedInUser.setHobbies(hobbies);
-                                    database.EditUserDetail(loggedInUser, "Hobbies");
                                     System.out.println("Hobby '" + hobbyToRemove + "' removed.");
                                 } else {
                                     System.out.println("Invalid index!");
@@ -153,16 +141,16 @@ public class UserAccess {
                     }
                     break;
                 case 11:
-                    Stack<String> jobs = loggedInUser.getJobs();
+                    Stack< String> jobs = loggedInUser.getJobs();
                     System.out.println("Current Job:" + jobs.peek());
                     System.out.print("New ");
                     String newJob = validate.validateJobs();
                     jobs.push(newJob);
                     loggedInUser.setJobs(jobs);
-                    database.EditUserDetail(loggedInUser, "Jobs");
                     break;
                 case -1:
                     System.out.println("User Profile Updated.\n");
+                    database.updateUserDetail(loggedInUser);
                     isDoneEdit = true;
                     break;
                 default:
@@ -188,7 +176,7 @@ public class UserAccess {
             System.out.println("Relationship Status: " + user.getRelationshipStatus());
             System.out.println("Number of Friends: " + user.getNumberOfFriends());
             System.out.println("Hobbies: " + user.getHobbies());
-            Stack<String> jobs = user.getJobs();
+            Stack< String> jobs = user.getJobs();
             String currentJob = jobs.pop();
             System.out.println("Current Job: " + currentJob);
             System.out.println("Previous Jobs History: " + jobs);
@@ -203,9 +191,14 @@ public class UserAccess {
         SearchEngine search = new SearchEngine(loggedInUser);
         search.searchUsers();
     }
-    
-    public void Friend(){
+
+    public void Friend() {
         Friend friend = new Friend(loggedInUser);
         friend.friendMenu();
+    }
+
+    public void Chat() {
+        Chat chat = new Chat(loggedInUser);
+        chat.chatManager();
     }
 }

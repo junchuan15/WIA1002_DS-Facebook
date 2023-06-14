@@ -4,15 +4,15 @@
  */
 package y1s2_assignment;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class ConnectionGraph {
 
     private LinkedList<Vertex> vertices;
+    DatabaseSQL database = new DatabaseSQL();
+    ;
     private int index;
 
     public ConnectionGraph() {
@@ -20,203 +20,184 @@ public class ConnectionGraph {
         index = 0;
     }
 
-    public void addVertex(String username) {
-        if (!vertexExists(username)) {
-            vertices.add(new Vertex(username, index++));
+    public void addVertex(User users) {
+        if (!vertexExists(users)) {
+            vertices.add(new Vertex(users, index++));
+
         }
     }
 
-    public void addEdge(User loggedInUser, String username2) {
-        Vertex vertex1 = getVertex(loggedInUser.getName());
-        Vertex vertex2 = getVertex(username2);
+    public void addEdge(User user, User friend) {
+        Vertex vertex1 = getVertex(user);
+        Vertex vertex2 = getVertex(friend);
 
         if (vertex1 != null && vertex2 != null) {
-            vertex1.addNeighbor(vertex2);
-            vertex2.addNeighbor(vertex1);
+            vertex1.addNeighbour(vertex2);
+            vertex2.addNeighbour(vertex1);
         }
     }
 
-    public void removeVertex(String username) {
-        Vertex vertex = getVertex(username);
+    public void removeVertex(User user) {
+        Vertex vertex = getVertex(user);
         if (vertex != null) {
             vertices.remove(vertex);
-            // Remove connections to the vertex
             for (Vertex v : vertices) {
-                v.removeNeighbor(vertex);
+                v.removeNeighbour(vertex);
             }
         }
     }
 
-    public void removeEdge(String username1, String username2) {
-        Vertex vertex1 = getVertex(username1);
-        Vertex vertex2 = getVertex(username2);
+    public void removeEdge(User user1, User user2) {
+        Vertex vertex1 = getVertex(user1);
+        Vertex vertex2 = getVertex(user2);
 
         if (vertex1 != null && vertex2 != null) {
-            vertex1.removeNeighbor(vertex2);
-            vertex2.removeNeighbor(vertex1);
+            vertex1.removeNeighbour(vertex2);
+            vertex2.removeNeighbour(vertex1);
         }
     }
 
-    public String showFirstDegreeConnections(String username) {
-        StringBuilder sb = new StringBuilder();
-        Vertex vertex = getVertex(username);
+    public List<String> showFirstDegreeConnections(User user) {
+        List<String> firstDegree = new ArrayList<>();
+        Vertex vertex = getVertex(user);
+
         if (vertex != null) {
-            LinkedList<Vertex> neighbors = vertex.getNeighbors();
-            for (Vertex neighbor : neighbors) {
-                sb.append(neighbor.getUsername()).append(",");
+            LinkedList<Vertex> neighbours = vertex.getNeighbours();
+            for (Vertex neighbour : neighbours) {
+                firstDegree.add(neighbour.getUser().getUsername());
             }
-
         } else {
-            sb.append("Vertex ").append(username).append(" not found.");
+            firstDegree.add("Vertex " + user.getUsername() + " not found.");
         }
-        if (!sb.isEmpty()) {
-            sb.deleteCharAt(sb.length() - 1);
-        }
-        return sb.toString();
+
+        return firstDegree;
     }
 
-    public String showSecondDegreeConnections(String username) {
-        StringBuilder sb = new StringBuilder();
-        Vertex vertex = getVertex(username);
-        if (vertex != null) {
-            LinkedList<Vertex> firstDegreeNeighbors = vertex.getNeighbors();
+    public List< String> showSecondDegreeConnections(User loggedInUser) {
+        List< String> secondDegree = new ArrayList<>();
+        Vertex loggedInUserVertex = getVertex(loggedInUser);
 
-            for (Vertex firstDegreeNeighbor : firstDegreeNeighbors) {
-                LinkedList<Vertex> secondDegreeNeighbors = firstDegreeNeighbor.getNeighbors();
-                for (Vertex secondDegreeNeighbor : secondDegreeNeighbors) {
-                    if (!secondDegreeNeighbor.equals(vertex) && !firstDegreeNeighbors.contains(secondDegreeNeighbor)) {
-                        sb.append(secondDegreeNeighbor.getUsername()).append(",");
+        if (loggedInUserVertex != null) {
+            LinkedList<Vertex> firstDegreeNeighbours = loggedInUserVertex.getNeighbours();
+
+            for (Vertex firstDegreeNeighbor : firstDegreeNeighbours) {
+                LinkedList<Vertex> secondDegreeNeighbours = firstDegreeNeighbor.getNeighbours();
+                for (Vertex secondDegreeNeighbour : secondDegreeNeighbours) {
+                    if (!secondDegreeNeighbour.equals(loggedInUserVertex) && !firstDegreeNeighbours.contains(secondDegreeNeighbour)) {
+                        secondDegree.add(secondDegreeNeighbour.getUser().getUsername());
+                    }
+                }
+            }
+        }
+
+        return secondDegree;
+    }
+
+    public List< String> showFirstAndSecondDegreeConnections(User user) {
+        List< String> connections = new ArrayList<>();
+        Vertex vertex = getVertex(user);
+
+        if (vertex != null) {
+            LinkedList<Vertex> firstDegreeNeighbours = vertex.getNeighbours();
+            for (Vertex firstDegreeNeighbour : firstDegreeNeighbours) {
+                connections.add(firstDegreeNeighbour.getUser().getUsername());
+
+                LinkedList<Vertex> secondDegreeNeighbours = firstDegreeNeighbour.getNeighbours();
+                for (Vertex secondDegreeNeighbour : secondDegreeNeighbours) {
+                    if (!secondDegreeNeighbour.equals(vertex) && !firstDegreeNeighbours.contains(secondDegreeNeighbour)) {
+                        connections.add(secondDegreeNeighbour.getUser().getUsername());
                     }
                 }
             }
         } else {
-            sb.append("Vertex ").append(username).append(" not found.");
-        }
-        if (!sb.isEmpty()) {
-            sb.deleteCharAt(sb.length() - 1);
+            connections.add("Vertex " + user.getUsername() + " not found.");
         }
 
-        return sb.toString();
+        return connections;
     }
 
-    public String showFirstAndSecondDegreeConnections(String username) {
-        StringBuilder sb = new StringBuilder();
-        Vertex vertex = getVertex(username);
-        if (vertex != null) {
-            LinkedList<Vertex> firstDegreeNeighbors = vertex.getNeighbors();
-            for (Vertex firstDegreeNeighbor : firstDegreeNeighbors) {
-                sb.append(firstDegreeNeighbor.getUsername()).append(",");
-                LinkedList<Vertex> secondDegreeNeighbors = firstDegreeNeighbor.getNeighbors();
-                for (Vertex secondDegreeNeighbor : secondDegreeNeighbors) {
-                    if (!secondDegreeNeighbor.equals(vertex) && !firstDegreeNeighbors.contains(secondDegreeNeighbor)) {
-                        sb.append(secondDegreeNeighbor.getUsername()).append(",");
+    public void findDegreeOfConnection(List<User> users) {
+        for (int i = 0; i < users.size(); i++) {
+            for (int j = i + 1; j < users.size(); j++) {
+                User user1 = users.get(i);
+                User user2 = users.get(j);
+                int degree = findDegreeOfConnection(user1, user2);
+                System.out.println("Degree of connection between " + user1.getUsername() + " and " + user2.getUsername() + ": " + degree);
+            }
+        }
+    }
+
+    private int findDegreeOfConnection(User user1, User user2) {
+        Vertex vertex1 = getVertex(user1);
+        Vertex vertex2 = getVertex(user2);
+
+        if (vertex1 != null && vertex2 != null) {
+            LinkedList<Vertex> queue = new LinkedList<>();
+            boolean[] visited = new boolean[vertices.size()];
+            int[] degree = new int[vertices.size()];
+
+            queue.add(vertex1);
+            visited[vertex1.getIndex()] = true;
+
+            while (!queue.isEmpty()) {
+                Vertex current = queue.poll();
+
+                if (current.equals(vertex2)) {
+                    return degree[current.getIndex()];
+                }
+
+                LinkedList<Vertex> neighbours = current.getNeighbours();
+                int currentDegree = degree[current.getIndex()];
+                int nextDegree = currentDegree + 1;
+
+                for (Vertex neighbour : neighbours) {
+                    int neighbourIndex = neighbour.getIndex();
+                    if (!visited[neighbourIndex]) {
+                        queue.add(neighbour);
+                        visited[neighbourIndex] = true;
+                        degree[neighbourIndex] = nextDegree;
                     }
                 }
             }
-        } else {
-            sb.append("Vertex ").append(username).append(" not found.");
-        }
-        if (!sb.isEmpty()) {
-            sb.deleteCharAt(sb.length() - 1);
         }
 
-        return sb.toString();
+        return -1; // Return -1 if the connection is not found
     }
 
-   public int findDegreeOfConnection(String username1, String username2) {
-    Vertex vertex1 = getVertex(username1);
-    Vertex vertex2 = getVertex(username2);
-
-    if (vertex1 != null && vertex2 != null) {
-        LinkedList<Vertex> queue = new LinkedList<>();
-        boolean[] visited = new boolean[vertices.size()];
-        int[] degree = new int[vertices.size()];
-
-        queue.add(vertex1);
-        visited[vertex1.getIndex()] = true;
-
-        while (!queue.isEmpty()) {
-            Vertex current = queue.poll();
-
-            if (current.equals(vertex2)) {
-                return degree[current.getIndex()];
-            }
-
-            LinkedList<Vertex> neighbors = current.getNeighbors();
-            int currentDegree = degree[current.getIndex()];
-            int nextDegree = currentDegree + 1;
-
-            for (Vertex neighbor : neighbors) {
-                int neighborIndex = neighbor.getIndex();
-                if (!visited[neighborIndex]) {
-                    queue.add(neighbor);
-                    visited[neighborIndex] = true;
-                    degree[neighborIndex] = nextDegree;
-                }
-            }
-        }
-    }
-
-    return -1; // Return -1 if the connection is not found
-}
     public String showAdjacency() {
         StringBuilder sb = new StringBuilder();
 
         for (Vertex vertex : vertices) {
-            sb.append(vertex.getUsername()).append(":");
-            LinkedList<Vertex> neighbors = vertex.getNeighbors();
-            for (Vertex neighbor : neighbors) {
-                sb.append(neighbor.getUsername()).append(",");
+            User user = vertex.getUser();
+            sb.append(user.getUsername()).append(":");
+            List<Vertex> neighbours = vertex.getNeighbours();
+            for (Vertex neighbour : neighbours) {
+                User neighbourUser = neighbour.getUser();
+                sb.append(neighbourUser.getUsername()).append(",");
             }
 
-            sb.deleteCharAt(sb.length() - 1);
+            if (!neighbours.isEmpty()) {
+                sb.deleteCharAt(sb.length() - 1);
+            }
             sb.append("\n");
         }
+
+        sb.append("Adjacency list generated successfully.");
         return sb.toString();
     }
 
-   /* public void storeAdjacency() {
-        try {
-            FileWriter writer = new FileWriter("connection.txt");
-            writer.write(showAdjacency());
-            writer.close();
-        } catch (IOException e) {
-            System.out.println("Error writing to file: " + e.getMessage());
-        }
-    }
-
-    public void loadAdjacency() {
-        try ( BufferedReader reader = new BufferedReader(new FileReader("connection.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(":");
-                if (parts.length == 2) {
-                    String vertex = parts[0];
-                    String[] neighbors = parts[1].split(",");
-                    addVertex(vertex);
-                    for (String neighbor : neighbors) {
-                        addVertex(neighbor);
-                        addEdge(vertex, neighbor);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.out.println("Error reading file: " + e.getMessage());
-        }
-    }
-*/
-    private boolean vertexExists(User loggedInUser) {
+    private boolean vertexExists(User user) {
         for (Vertex vertex : vertices) {
-            if (vertex.getUsername().equals(loggedInUser.getUsername())) {
+            if (vertex.getUser().equals(user)) {
                 return true;
             }
         }
         return false;
     }
 
-    private Vertex getVertex(String username) {
+    private Vertex getVertex(User user) {
         for (Vertex vertex : vertices) {
-            if (vertex.getUsername().equals(username)) {
+            if (vertex.getUser().equals(user)) {
                 return vertex;
             }
         }
@@ -225,37 +206,37 @@ public class ConnectionGraph {
 
     private class Vertex {
 
-        private String username;
+        private User user;
         private int index;
         private LinkedList<Vertex> neighbours;
 
-        public Vertex(String username, int index) {
-            this.username = username;
+        public Vertex(User user, int index) {
+            this.user = user;
             this.index = index;
             this.neighbours = new LinkedList<>();
         }
 
-        public String getUsername() {
-            return username;
+        public User getUser() {
+            return user;
         }
 
         public int getIndex() {
             return index;
         }
 
-        public LinkedList<Vertex> getNeighbors() {
+        public LinkedList<Vertex> getNeighbours() {
             return neighbours;
         }
 
-        public void addNeighbor(Vertex neighbour) {
+        public void addNeighbour(Vertex neighbour) {
             if (!neighbours.contains(neighbour)) {
                 neighbours.add(neighbour);
             }
         }
 
-        public void removeNeighbor(Vertex neighbour) {
+        public void removeNeighbour(Vertex neighbour) {
             neighbours.remove(neighbour);
         }
-    
-}
+
+    }
 }

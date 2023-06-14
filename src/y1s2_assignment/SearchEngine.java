@@ -5,6 +5,7 @@
 package y1s2_assignment;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Scanner;
 
@@ -78,45 +79,69 @@ public class SearchEngine {
         }
     }
 
-    public void searchField(ArrayList<String> inputList, String attribute) {
+    public void searchField(ArrayList<String> inputList,  String attribute) {
         Scanner sc = new Scanner(System.in);
 
-        System.out.print("Type a " + attribute + ": ");
-        String search = sc.nextLine();
+         String search = null;
+        while (search == null || search.isEmpty()) {
+            System.out.print("Type a " + attribute + ": ");
+            search = sc.nextLine();
+            if (search.isEmpty()) {
+                System.out.println("Input cannot be empty. Please try again.");
+            }
+        }
+
         display(inputList, search);
 
-        System.out.print("Select the " + attribute + " you want to find: ");
-        String correct = sc.nextLine();
+         String correct = null;
+        while (correct == null || correct.isEmpty()) {
+            System.out.print("Select the " + attribute + " you want to find: ");
+            correct = sc.nextLine();
+            if (correct.isEmpty()) {
+                System.out.println("Input cannot be empty. Please try again.");
+            }
+        }
+
         User searchedUser = database.getUser(attribute, correct);
         action(inputList, searchedUser);
     }
 
-    public static void display(ArrayList<String> inputList, String searchKey) {
+    public void display(ArrayList<String> inputList,  String searchKey) {
         ArrayList<ArrayList<String>> similarity = new ArrayList<>();
-
-        for (String value : inputList) {
-            String distance = Double.toString(DamerauLevenshteinDistance(searchKey, value));
-            ArrayList<String> row = new ArrayList<>();
-            row.add(value);
-            row.add(distance);
+        ArrayList< String> row1 = new ArrayList<>();
+        ArrayList< String> row2 = new ArrayList<>();
+        row1 = inputList;
+        for (int i = 0; i < row1.size(); i++) {
+            String temp = Double.toString(DamerauLevenshteinDistance(searchKey, row1.get(i)));
+            row2.add(temp);
+        }
+        for (int i = 0; i < row1.size(); i++) {
+            ArrayList< String> row = new ArrayList<>();
+            row.add(row1.get(i));
+            row.add(row2.get(i));
             similarity.add(row);
         }
-        Comparator<ArrayList<String>> comparator = Comparator.comparingDouble(row -> Double.parseDouble(row.get(1)));
-        similarity.sort(comparator);
-        similarity.sort((row1, row2) -> {
-            int compareResult = row1.get(1).compareTo(row2.get(1));
-            if (compareResult == 0) {
-                return row1.get(0).compareTo(row2.get(0));
+        Comparator<ArrayList<String>> comparator = new Comparator<ArrayList<String>>() {
+            @Override
+            public int compare(ArrayList< String> row1, ArrayList< String> row2) {
+                Double distance1 = Double.parseDouble(row1.get(1));
+                Double distance2 = Double.parseDouble(row2.get(1));
+                return distance1.compareTo(distance2);
             }
-            return compareResult;
-        });
-
-        for (int i = 0; i < Math.min(10, similarity.size()); i++) {
-            System.out.println(similarity.get(i).get(0));
+        };
+        Collections.sort(similarity, comparator);
+        if (similarity.size() >= 10) {
+            for (int i = 0; i < 10; i++) {
+                System.out.println(similarity.get(i).get(0));
+            }
+        } else if (similarity.size() > 0 && similarity.size() < 10) {
+            for (int i = 0; i < similarity.size(); i++) {
+                System.out.println(similarity.get(i).get(0));
+            }
         }
     }
 
-    public static double DamerauLevenshteinDistance(String searchKey, String element) {
+    public double DamerauLevenshteinDistance( String searchKey,  String element) {
         if (element.equals(searchKey)) {
             return 0;
         } else if (element.startsWith(searchKey) || element.endsWith(searchKey)) {
@@ -145,13 +170,11 @@ public class SearchEngine {
             } else {
                 return formula(searchKey, element);
             }
-        } else {
-            return formula(searchKey, element);
         }
-        return -1;
+        return formula(searchKey, element);
     }
 
-    public static int formula(String searchKey, String element) {
+    public static int formula( String searchKey,  String element) {
         int[][] distance = new int[searchKey.length() + 1][element.length() + 1];
         int cost = 0;
         for (int i = 0; i <= searchKey.length(); i++) {
@@ -180,7 +203,7 @@ public class SearchEngine {
         return distance[searchKey.length()][element.length()];
     }
 
-    public static boolean match(String searchKey, String element) {
+    public static boolean match(String searchKey,  String element) {
         for (int i = 0; i < searchKey.length(); i++) {
             char ch = searchKey.charAt(i);
             if (element.contains(Character.toString(ch))) {

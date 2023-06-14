@@ -23,7 +23,7 @@ public class Test {
                 System.out.println("2. Login");
                 System.out.println("3. Exit");
                 System.out.print("Enter your choice: ");
-                String choiceStr = sc.nextLine();
+                 String choiceStr = sc.nextLine();
 
                 if (choiceStr.matches("\\d+")) {
                     int choice = Integer.parseInt(choiceStr);
@@ -65,9 +65,10 @@ public class Test {
                         System.out.println("2. Display Account");
                         System.out.println("3. Search User");
                         System.out.println("4. Friend Menu");
-                        System.out.println("5. Logout");
+                        System.out.println("5. Messenger");
+                        System.out.println("6. Logout");
                         System.out.print("Enter your choice: ");
-                        String choiceStr = sc.nextLine();
+                         String choiceStr = sc.nextLine();
 
                         if (choiceStr.matches("\\d+")) {
                             int choice = Integer.parseInt(choiceStr);
@@ -86,6 +87,9 @@ public class Test {
                                     userAccess.Friend();
                                     break;
                                 case 5:
+                                    userAccess.Chat();
+                                    break;
+                                case 6:
                                     System.out.println("Log out successfully. Bye~\n");
                                     loggedInUser = null;
                                     login = false;
