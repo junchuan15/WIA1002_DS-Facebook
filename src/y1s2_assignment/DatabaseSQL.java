@@ -22,6 +22,7 @@ public class DatabaseSQL {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection con = DriverManager.getConnection(url, username, password);
+           // createTableIfNotExists(con);
             con.close();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -29,6 +30,22 @@ public class DatabaseSQL {
             e.printStackTrace();
         }
     }
+
+    /* Need to update as debug
+    private void createTableIfNotExists(Connection con) throws SQLException {
+        Statement stmt = con.createStatement();
+        String createTableQuery = "CREATE TABLE IF NOT EXISTS usersdata (" +
+                "Account_ID VARCHAR(10) PRIMARY KEY," +
+                "UserName VARCHAR(50) NOT NULL," +
+                "EmailAddress VARCHAR(50) NOT NULL," +
+                "ContactNumber VARCHAR(20) NOT NULL," +
+                "Password VARCHAR(255) NOT NULL," +
+                "Role VARCHAR(20) NOT NULL," +
+                // Add more columns as needed
+                ")";
+        stmt.executeUpdate(createTableQuery);
+        stmt.close();
+    }*/
 
     public String generateAccountID(String role) {
         try {
@@ -192,25 +209,109 @@ public class DatabaseSQL {
         try {
             connectAndFetchData();
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET UserName=?, EmailAddress=?, ContactNumber=?, Password=?, Role=?, Name=?, Birthday=?, Age=?, Address=?, Gender=?, Relationship_Status=?, Hobbies=?, Jobs=?, NumberOfFriends=?, Friends=?, SentRequests=?, ReceivedRequests=? WHERE Account_ID=?");
-            ps.setString(1, user.getUsername());
-            ps.setString(2, user.getEmailAddress());
-            ps.setString(3, user.getContactNumber());
-            ps.setString(4, user.getPassword());
-            ps.setString(5, user.getRole());
-            ps.setString(6, user.getName());
-            ps.setString(7, user.getBirthday());
-            ps.setInt(8, user.getAge());
-            ps.setString(9, user.getAddress());
-            ps.setString(10, user.getGender());
-            ps.setString(11, user.getRelationshipStatus());
-            ps.setString(12, String.join(",", user.getHobbies()));
-            ps.setString(13, String.join(",", user.getJobs()));
-            ps.setInt(14, user.getNumberOfFriends());
-            ps.setString(15, String.join(",", user.getFriends()));
-            ps.setString(16, String.join(",", user.getSentRequests()));
-            ps.setString(17, String.join(",", user.getReceivedRequests()));
-            ps.setString(18, user.getAccountID());
+
+            StringBuilder queryBuilder = new StringBuilder("UPDATE usersdata SET ");
+            ArrayList<Object> queryParams = new ArrayList<>();
+
+            if (user.getUsername() != null) {
+                queryBuilder.append("UserName=?, ");
+                queryParams.add(user.getUsername());
+            }
+
+            if (user.getEmailAddress() != null) {
+                queryBuilder.append("EmailAddress=?, ");
+                queryParams.add(user.getEmailAddress());
+            }
+
+            if (user.getContactNumber() != null) {
+                queryBuilder.append("ContactNumber=?, ");
+                queryParams.add(user.getContactNumber());
+            }
+
+            if (user.getPassword() != null) {
+                queryBuilder.append("Password=?, ");
+                queryParams.add(user.getPassword());
+            }
+
+            if (user.getRole() != null) {
+                queryBuilder.append("Role=?, ");
+                queryParams.add(user.getRole());
+            }
+
+            if (user.getName() != null) {
+                queryBuilder.append("Name=?, ");
+                queryParams.add(user.getName());
+            }
+
+            if (user.getBirthday() != null) {
+                queryBuilder.append("Birthday=?, ");
+                queryParams.add(user.getBirthday());
+            }
+
+            if (user.getAge() != 0) {
+                queryBuilder.append("Age=?, ");
+                queryParams.add(user.getAge());
+            }
+
+            if (user.getAddress() != null) {
+                queryBuilder.append("Address=?, ");
+                queryParams.add(user.getAddress());
+            }
+
+            if (user.getGender() != null) {
+                queryBuilder.append("Gender=?, ");
+                queryParams.add(user.getGender());
+            }
+
+            if (user.getRelationshipStatus() != null) {
+                queryBuilder.append("Relationship_Status=?, ");
+                queryParams.add(user.getRelationshipStatus());
+            }
+
+            if (user.getHobbies() != null) {
+                queryBuilder.append("Hobbies=?, ");
+                queryParams.add(joinWithComma(user.getHobbies()));
+            }
+
+            if (user.getJobs() != null) {
+                queryBuilder.append("Jobs=?, ");
+                queryParams.add(joinWithComma(user.getJobs()));
+            }
+
+            if (user.getNumberOfFriends() != 0) {
+                queryBuilder.append("NumberOfFriends=?, ");
+                queryParams.add(user.getNumberOfFriends());
+            }
+
+            if (user.getFriends() != null) {
+                queryBuilder.append("Friends=?, ");
+                queryParams.add(joinWithComma(user.getFriends()));
+            }
+
+            if (user.getSentRequests() != null) {
+                queryBuilder.append("SentRequests=?, ");
+                queryParams.add(joinWithComma(user.getSentRequests()));
+            }
+
+            if (user.getReceivedRequests() != null) {
+                queryBuilder.append("ReceivedRequests=?, ");
+                queryParams.add(joinWithComma(user.getReceivedRequests()));
+            }
+
+            queryBuilder.setLength(queryBuilder.length() - 2);
+
+            queryBuilder.append(" WHERE Account_ID=?");
+            queryParams.add(user.getAccountID());
+
+            PreparedStatement ps = con.prepareStatement(queryBuilder.toString());
+            int parameterIndex = 1;
+            for (Object param : queryParams) {
+                if (param instanceof Integer) {
+                    ps.setInt(parameterIndex++, (Integer) param);
+                } else {
+                    ps.setString(parameterIndex++, String.valueOf(param));
+                }
+            }
             ps.executeUpdate();
             con.close();
         } catch (SQLException e) {
@@ -218,57 +319,18 @@ public class DatabaseSQL {
         }
     }
 
-    public void EditUserDetail(User user, String columnName) {
-        try {
-            connectAndFetchData();
-            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET " + columnName + " = ? WHERE Account_ID = ?");
-
-            switch (columnName) {
-                case "UserName":
-                    ps.setString(1, user.getUsername());
-                    break;
-                case "EmailAddress":
-                    ps.setString(1, user.getEmailAddress());
-                    break;
-                case "ContactNumber":
-                    ps.setString(1, user.getContactNumber());
-                    break;
-                case "Password":
-                    ps.setString(1, user.getPassword());
-                    break;
-                case "Name":
-                    ps.setString(1, user.getName());
-                    break;
-                case "Birthday":
-                    ps.setString(1, user.getBirthday());
-                    break;
-                case "Address":
-                    ps.setString(1, user.getAddress());
-                    break;
-                case "Gender":
-                    ps.setString(1, user.getGender());
-                    break;
-                case "Relationship_Status":
-                    ps.setString(1, user.getRelationshipStatus());
-                    break;
-                case "Hobbies":
-                    ps.setString(1, String.join(",", user.getHobbies()));
-                    break;
-                case "Jobs":
-                    ps.setString(1, String.join(",", user.getJobs()));
-                    break;
-                default:
-                    System.out.println("Invalid column name: " + columnName);
-                    return;
+    private String joinWithComma(List<String> list) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i < list.size(); i++) {
+            String element = list.get(i);
+            if (element != null) {
+                sb.append(element);
+                if (i < list.size() - 1) {
+                    sb.append(",");
+                }
             }
-
-            ps.setString(2, user.getAccountID());
-            ps.executeUpdate();
-            con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
+        return sb.toString();
     }
 
     public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList) {
@@ -321,17 +383,64 @@ public class DatabaseSQL {
                         .setAddress(rs.getString("Address"))
                         .setGender(rs.getString("Gender"))
                         .setRelationshipStatus(rs.getString("Relationship_Status"))
-                        .setNumberOfFriends(rs.getInt("NumberOfFriends"))
-                        .setHobbies(new ArrayList<String>(Arrays.asList(rs.getString("Hobbies").split(","))))
-                        .setFriends(new ArrayList<String>(Arrays.asList(rs.getString("Friends").split(","))))
-                        .setSentRequests(new ArrayList<String>(Arrays.asList(rs.getString("SentRequests").split(","))))
-                        .setReceivedRequests(new ArrayList<String>(Arrays.asList(rs.getString("ReceivedRequests").split(","))));
+                        .setNumberOfFriends(rs.getInt("NumberOfFriends"));
+
+                String hobbiesString = rs.getString("Hobbies");
+                List<String> hobbies = new ArrayList<>();
+                if (hobbiesString != null) {
+                    String[] hobbiesArray = hobbiesString.split(",");
+                    for (String hobby : hobbiesArray) {
+                        if (hobby != null) {
+                            hobbies.add(hobby);
+                        }
+                    }
+                }
+                builder.setHobbies((ArrayList<String>) hobbies);
+
+                String friendsString = rs.getString("Friends");
+                List<String> friends = new ArrayList<>();
+                if (friendsString != null) {
+                    String[] friendsArray = friendsString.split(",");
+                    for (String friend : friendsArray) {
+                        if (friend != null) {
+                            friends.add(friend);
+                        }
+                    }
+                }
+                builder.setFriends((ArrayList<String>) friends);
+
+                String sentRequestsString = rs.getString("SentRequests");
+                List<String> sentRequests = new ArrayList<>();
+                if (sentRequestsString != null) {
+                    String[] sentRequestsArray = sentRequestsString.split(",");
+                    for (String request : sentRequestsArray) {
+                        if (request != null) {
+                            sentRequests.add(request);
+                        }
+                    }
+                }
+                builder.setSentRequests((ArrayList<String>) sentRequests);
+
+                String receivedRequestsString = rs.getString("ReceivedRequests");
+                List<String> receivedRequests = new ArrayList<>();
+                if (receivedRequestsString != null) {
+                    String[] receivedRequestsArray = receivedRequestsString.split(",");
+                    for (String request : receivedRequestsArray) {
+                        if (request != null) {
+                            receivedRequests.add(request);
+                        }
+                    }
+                }
+                builder.setReceivedRequests((ArrayList<String>) receivedRequests);
 
                 List<String> jobsList = Arrays.asList(rs.getString("Jobs").split(","));
                 Stack<String> jobsStack = new Stack<>();
-                jobsStack.addAll(jobsList);
+                for (String job : jobsList) {
+                    if (job != null) {
+                        jobsStack.push(job);
+                    }
+                }
                 builder.setJobs(jobsStack);
-
                 user = new User(builder);
             }
 
@@ -357,156 +466,85 @@ public class DatabaseSQL {
         }
     }
 
-    public void createVerticesFromDatabase() {
-        ConnectionGraph graph = new ConnectionGraph();
+    public ArrayList<User> loadUsers() {
+        ArrayList<User> userList = new ArrayList<>();
+
         try {
-            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            Statement statement = con.createStatement();
-            ResultSet rs = statement.executeQuery("SELECT UserName FROM usersdata");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM usersdata");
 
-            while (rs.next()) {
-                String username = rs.getString("UserName");
-                graph.addVertex(username);
+            while (resultSet.next()) {
+               String username = resultSet.getString("UserName");
+                User user = getUser("UserName", username);
+                userList.add(user);
             }
-
-            rs.close();
             statement.close();
-            con.close();
+            resultSet.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        return userList;
     }
 
-    public void updateSentRequests(User loggedInUser) {
-        try {
-            Connection con = DriverManager.getConnection(url, username, password);
-            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET SentRequests = ? WHERE Account_ID = ?");
-            ps.setString(1, String.join(",", loggedInUser.getSentRequests()));
-            ps.setString(2, loggedInUser.getAccountID());
-            ps.executeUpdate();
-            ps.close();
-            con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    public ConnectionGraph createGraph() {
+        ConnectionGraph graph = new ConnectionGraph();
+        ArrayList<User> users = loadUsers();
 
-    public void updateReceivedRequests(User user) {
-        try {
-            Connection con = DriverManager.getConnection(url, username, password);
-            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET ReceivedRequests = ? WHERE Account_ID = ?");
-            ps.setString(1, String.join(",", user.getReceivedRequests()));
-            ps.setString(2, user.getAccountID());
-            ps.executeUpdate();
-            ps.close();
-            con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        for (User user : users) {
+            graph.addVertex(user);
+            ArrayList<String> friendUsernames = user.getFriends();
+            if (friendUsernames != null) {
+                for (String friendUsername : friendUsernames) {
+                    User friend = null;
+                    for (User u : users) {
+                        if (u.getUsername().equalsIgnoreCase(friendUsername)) {
+                            friend = u;
+                            graph.addEdge(user, friend);
+                            break;
+                        }
+                    }
+                }
+            }
         }
-    }
-
-    public void updateNumFriendsAndFriends(User user) {
-        try {
-            connectAndFetchData();
-            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            PreparedStatement ps = con.prepareStatement("UPDATE usersdata SET NumberOfFriends=?, Friends=? WHERE Account_ID=?");
-            ps.setInt(1, user.getNumberOfFriends());
-            ps.setString(2, String.join(",", user.getFriends()));
-            ps.setString(3, user.getAccountID());
-            ps.executeUpdate();
-            con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        return graph;
     }
     
-    public String getFriendList(String name) {
-    try {
-        Connection con = DriverManager.getConnection(url, username, password);
-        PreparedStatement ps = con.prepareStatement("SELECT Friends FROM usersdata WHERE Username = ?");
-        ps.setString(1, name);
-        ResultSet rs = ps.executeQuery();
+     public String getRandomUsername(String loggedInUsername) {
+        String randomUsername = null;
 
-        if (rs.next()) {
-            String friendList = rs.getString("Friends");
-            ps.close();
-            con.close();
-            return friendList;
-        }
-
-        ps.close();
-        con.close();
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-    return "";
-}
-    
-     public String getSentRequests(String name) {
         try {
-            Connection con = DriverManager.getConnection(url, username, password);
-            PreparedStatement ps = con.prepareStatement("SELECT SentRequests FROM usersdata WHERE Username = ?");
-            ps.setString(1, name);
-            ResultSet rs = ps.executeQuery();
+         Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            Statement statement = connection.createStatement();
+            String countQuery = "SELECT COUNT(*) AS total FROM usersdata WHERE username != ?";
+            PreparedStatement countStatement = connection.prepareStatement(countQuery);
+            countStatement.setString(1, loggedInUsername);
+            ResultSet countResult = countStatement.executeQuery();
 
-            if (rs.next()) {
-            String SentRequests = rs.getString("SentRequests");
-            ps.close();
-            con.close();
-            return SentRequests;
-        }
-
-        ps.close();
-        con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-     
-     public String getReceivedRequests(String name) {
-        try {
-            Connection con = DriverManager.getConnection(url, username, password);
-            PreparedStatement ps = con.prepareStatement("SELECT SentRequests FROM usersdata WHERE Username = ?");
-            ps.setString(1, name);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-            String ReceivedRequests = rs.getString("ReceivedRequests");
-            ps.close();
-            con.close();
-            return ReceivedRequests;
-        }
-
-        ps.close();
-        con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-     
-      public int getNumberOfFriends(String name) {
-        try {
-            Connection con = DriverManager.getConnection(url, username, password);
-            PreparedStatement ps = con.prepareStatement("SELECT NumberOfFriends FROM usersdata WHERE UserName = ?");
-            ps.setString(1, name);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-                int numberOfFriends = rs.getInt("NumberOfFriends");
-                ps.close();
-                con.close();
-                return numberOfFriends;
+            int totalUsernames = 0;
+            if (countResult.next()) {
+                totalUsernames = countResult.getInt("total");
             }
 
-            ps.close();
-            con.close();
+            // Generate a random index within the range of the total number of usernames
+            int randomIndex = (int) (Math.random() * totalUsernames) + 1;
+
+            // Query the SQL database to retrieve the username at the random index, excluding the logged-in user
+            String usernameQuery = "SELECT username FROM usersdata WHERE username != ? LIMIT ?, 1";
+            PreparedStatement usernameStatement = connection.prepareStatement(usernameQuery);
+            usernameStatement.setString(1, loggedInUsername);
+            usernameStatement.setInt(2, randomIndex - 1);
+            ResultSet usernameResult = usernameStatement.executeQuery();
+
+            if (usernameResult.next()) {
+                randomUsername = usernameResult.getString("username");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return 0;
+
+        return randomUsername;
     }
+     
 }
