@@ -5,6 +5,7 @@
 package y1s2_assignment;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Stack;
 
 /**
@@ -31,6 +32,7 @@ public class User {
     private ArrayList<String> Friends;
     private ArrayList<String> SentRequests;
     private ArrayList<String> ReceivedRequests;
+    private LinkedList<Post> posts;
 
     public User(Builder builder) {
         this.accountID = builder.accountID;
@@ -52,6 +54,11 @@ public class User {
         this.SentRequests = builder.SentRequests;
         this.ReceivedRequests = builder.ReceivedRequests;
 
+    }
+
+    public User(String accountID) {
+        this.accountID = accountID;
+        this.posts = new LinkedList<>();
     }
 
     public String getRole() {
@@ -117,8 +124,20 @@ public class User {
     public void setNumberOfFriends(int NumberOfFriends) {
         this.NumberOfFriends = NumberOfFriends;
     }
-    
-    
+
+     public void addPost(Post post) {
+        if (posts == null) {
+            posts = new LinkedList<>();
+        }
+        posts.add(post);
+    }
+
+    public LinkedList<Post> getPosts() {
+        if (posts == null) {
+            posts = new LinkedList<>();
+        }
+        return posts;
+    }
 
     public ArrayList<String> getHobbies() {
         return Hobbies;

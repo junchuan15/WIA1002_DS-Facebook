@@ -12,7 +12,6 @@ public class ConnectionGraph {
 
     private LinkedList<Vertex> vertices;
     DatabaseSQL database = new DatabaseSQL();
-    ;
     private int index;
 
     public ConnectionGraph() {

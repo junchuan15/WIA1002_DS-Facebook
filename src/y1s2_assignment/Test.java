@@ -4,10 +4,11 @@
  */
 package y1s2_assignment;
 
+import java.sql.SQLException;
 import java.util.Scanner;
 
 public class Test {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
         Scanner sc = new Scanner(System.in);
         AccountManager accountManager = new AccountManager();
         Validation validate = new Validation();
@@ -66,7 +67,8 @@ public class Test {
                         System.out.println("3. Search User");
                         System.out.println("4. Friend Menu");
                         System.out.println("5. Messenger");
-                        System.out.println("6. Logout");
+                        System.out.println("6. Posting");
+                        System.out.println("7. Logout");
                         System.out.print("Enter your choice: ");
                          String choiceStr = sc.nextLine();
 
@@ -90,6 +92,8 @@ public class Test {
                                     userAccess.Chat();
                                     break;
                                 case 6:
+                                    userAccess.Post();
+                                case 7:
                                     System.out.println("Log out successfully. Bye~\n");
                                     loggedInUser = null;
                                     login = false;

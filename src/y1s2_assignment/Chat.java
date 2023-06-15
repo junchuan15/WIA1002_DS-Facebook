@@ -189,6 +189,8 @@ public class Chat {
             String message;
 
             while (true) {
+                System.out.println("You are now chatting with " + friend.getUsername());
+                System.out.println("[Type exit to Exit; edit to Edit Message; delete to Delete Message]");
                 System.out.print("You: ");
                 message = scanner.nextLine();
 
@@ -260,8 +262,6 @@ public class Chat {
 
                 if (friendChoice >= 1 && friendChoice <= friendObjects.size()) {
                     User friend = friendObjects.get(friendChoice - 1);
-                    System.out.println("You are now chatting with " + friend.getUsername());
-                    System.out.println("[Type exit to Exit; edit to Edit Message; delete to Delete Message]");
                     startChatting(friend);
                     validChoice = true;
                 } else {
@@ -272,7 +272,7 @@ public class Chat {
                 System.out.println("Invalid input. Please enter a valid choice.");
             }
         }
-        }
+    }
 
     private LocalDateTime getLatestChatTimestamp(User friend) {
         if (friend == null) {

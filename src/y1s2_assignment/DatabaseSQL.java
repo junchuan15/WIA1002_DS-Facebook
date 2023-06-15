@@ -7,6 +7,8 @@ package y1s2_assignment;
 import com.mysql.cj.Messages;
 import java.sql.*;
 import java.util.*;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 /**
  *
@@ -22,7 +24,7 @@ public class DatabaseSQL {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection con = DriverManager.getConnection(url, username, password);
-           // createTableIfNotExists(con);
+            // createTableIfNotExists(con);
             con.close();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -46,7 +48,6 @@ public class DatabaseSQL {
         stmt.executeUpdate(createTableQuery);
         stmt.close();
     }*/
-
     public String generateAccountID(String role) {
         try {
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
@@ -475,7 +476,7 @@ public class DatabaseSQL {
             ResultSet resultSet = statement.executeQuery("SELECT * FROM usersdata");
 
             while (resultSet.next()) {
-               String username = resultSet.getString("UserName");
+                String username = resultSet.getString("UserName");
                 User user = getUser("UserName", username);
                 userList.add(user);
             }
@@ -510,41 +511,178 @@ public class DatabaseSQL {
         }
         return graph;
     }
-    
-     public String getRandomUsername(String loggedInUsername) {
-        String randomUsername = null;
 
+    public int getAutoIncrementID() {
+        int autoIncrementID = 1;
         try {
-         Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            Statement statement = connection.createStatement();
-            String countQuery = "SELECT COUNT(*) AS total FROM usersdata WHERE username != ?";
-            PreparedStatement countStatement = connection.prepareStatement(countQuery);
-            countStatement.setString(1, loggedInUsername);
-            ResultSet countResult = countStatement.executeQuery();
-
-            int totalUsernames = 0;
-            if (countResult.next()) {
-                totalUsernames = countResult.getInt("total");
-            }
-
-            // Generate a random index within the range of the total number of usernames
-            int randomIndex = (int) (Math.random() * totalUsernames) + 1;
-
-            // Query the SQL database to retrieve the username at the random index, excluding the logged-in user
-            String usernameQuery = "SELECT username FROM usersdata WHERE username != ? LIMIT ?, 1";
-            PreparedStatement usernameStatement = connection.prepareStatement(usernameQuery);
-            usernameStatement.setString(1, loggedInUsername);
-            usernameStatement.setInt(2, randomIndex - 1);
-            ResultSet usernameResult = usernameStatement.executeQuery();
-
-            if (usernameResult.next()) {
-                randomUsername = usernameResult.getString("username");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String query = "SELECT post_ID FROM userspost ORDER BY post_ID DESC LIMIT 1";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                autoIncrementID = resultSet.getInt("post_ID");
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        return randomUsername;
+        return autoIncrementID;
     }
-     
+
+    public void uploadPost(Post post) {
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String query = "INSERT INTO userspost (PostTime, Account_ID, Content, MediaPath, Status, Num_Likes, Num_Comments) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+
+            preparedStatement.setTimestamp(1, Timestamp.valueOf(post.getTimeStamp()));
+            preparedStatement.setString(2, post.getAccountID());
+            preparedStatement.setString(3, post.getContent());
+            preparedStatement.setString(4, post.getMediaPath());
+            preparedStatement.setString(5, post.getStatusAsString());
+            preparedStatement.setInt(6, post.getLikes());
+            preparedStatement.setInt(7, post.getComments());
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deletePost(Post post) {
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String query = "DELETE FROM userspost WHERE Post_ID = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+
+            preparedStatement.setInt(1, post.getPostID());
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public LinkedList<Post> getPosts(String accountID) throws SQLException {
+        LinkedList<Post> posts = new LinkedList<>();
+        try {
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String query = "SELECT * FROM userspost WHERE Account_ID=?";
+            PreparedStatement statement = con.prepareStatement(query);
+            statement.setString(1, accountID);
+            ResultSet rs = statement.executeQuery();
+
+            while (rs.next()) {
+                LocalDateTime timeStamp = rs.getTimestamp("PostTime").toLocalDateTime();
+                int postID = rs.getInt("Post_ID");
+                String content = rs.getString("Content");
+                String mediaPath = rs.getString("MediaPath");
+                String statusString = rs.getString("status");
+                Post.Status status = Post.Status.valueOf(statusString);
+                int likes = rs.getInt("Num_Likes");
+                int comments = rs.getInt("Num_Comments");
+
+                Post.PostBuilder postBuilder;
+                if (mediaPath != null && !mediaPath.isEmpty()) {
+                    postBuilder = new Post.PostBuilder(timeStamp, postID, accountID, content, mediaPath, status);
+                } else {
+                    postBuilder = new Post.PostBuilder(timeStamp, postID, accountID, content, status);
+                }
+
+                Post post = postBuilder
+                        .setLikes(likes)
+                        .setComments(comments)
+                        .build();
+
+                posts.add(post);
+            }
+
+            rs.close();
+            statement.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return posts;
+    }
+
+    public ArrayList<String> getList(Post post, String attribute) {
+        ArrayList<String> list = new ArrayList<>();
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+
+        try {
+            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            statement = connection.prepareStatement("SELECT * FROM userspost WHERE Post_Id = ?");
+            statement.setInt(1, post.getPostID());
+            rs = statement.executeQuery();
+
+            if (rs.next()) {
+                String listString = rs.getString(attribute);
+                if (listString != null) {
+                    String[] arrayString = listString.split(",");
+                    for (String str : arrayString) {
+                        if (str != null && !str.isEmpty()) {
+                            list.add(str);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (statement != null) {
+                    statement.close();
+                }
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return list;
+    }
+
+    public void updatePost(Post post, String attribute, Object value) {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            statement = connection.prepareStatement("UPDATE userspost SET " + attribute + "=? WHERE Post_Id=?");
+
+            if (value instanceof String) {
+                statement.setString(1, (String) value);
+            } else if (value instanceof Integer) {
+                statement.setInt(1, (Integer) value);
+            } else if (value instanceof ArrayList<?>) {
+                ArrayList<String> list = (ArrayList<String>) value;
+                statement.setString(1, String.join(",", list));
+            }
+
+            statement.setInt(2, post.getPostID());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

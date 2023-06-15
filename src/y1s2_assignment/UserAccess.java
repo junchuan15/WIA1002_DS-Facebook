@@ -4,6 +4,7 @@
  */
 package y1s2_assignment;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.Scanner;
 
@@ -200,5 +201,10 @@ public class UserAccess {
     public void Chat() {
         Chat chat = new Chat(loggedInUser);
         chat.chatManager();
+    }
+    
+    public void Post() throws SQLException{
+        PostManager post = new PostManager(loggedInUser);
+        post.PostMenu();
     }
 }
