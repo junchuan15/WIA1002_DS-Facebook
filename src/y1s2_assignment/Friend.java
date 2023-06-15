@@ -4,6 +4,7 @@
  */
 package y1s2_assignment;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -119,11 +120,11 @@ public class Friend {
         }
     }
 
-    public void friendMenu() {
+    public void friendMenu() throws SQLException {
         Scanner scanner = new Scanner(System.in);
         boolean exit = false;
         while (!exit) {
-            
+
             System.out.println("==============================================\nFRIEND MENU:");
             System.out.println("1. Show Friend List");
             System.out.println("2. Show Pending Friend Requests");
@@ -144,7 +145,30 @@ public class Friend {
                     showSentRequests();
                     break;
                 case 4:
-                    displayfriendRecommend();
+                    boolean back = false;
+                    while (!back) {
+                        System.out.println("==============================================\nDISCOVER RECOMMENDATION:");
+                        System.out.println("1. By Degree of Friend");
+                        System.out.println("2. By Hobbies and Jobs");
+                        System.out.println("3. Back to Friend Menu");
+                        int select = scanner.nextInt();
+                        scanner.nextLine();
+                        switch (select) {
+                            case 1:
+                                displayfriendRecommend();
+                                break;
+                            case 2:
+                                break;
+                            case 3:
+                                back = true;
+                                System.out.println("Exiting Discover Menu");
+                                break;
+                            default:
+                                System.out.println("Invalid choice. Please try again.");
+                                break;
+
+                        }
+                    }
                     break;
                 case 5:
                     exit = true;
@@ -217,7 +241,7 @@ public class Friend {
         pendingFriendRequest(friendToProcess, String.valueOf(choice));
     }
 
-    public void action(User user) {
+    public void action(User user) throws SQLException {
         Scanner sc = new Scanner(System.in);
         boolean exit2 = false;
 
@@ -227,7 +251,8 @@ public class Friend {
             System.out.println("2. Add friend");
             System.out.println("3. Remove friend");
             System.out.println("4. Chat");
-            System.out.println("5. Back");
+            System.out.println("5. View Post");
+            System.out.println("6. Back");
             System.out.print("Enter your choice: ");
             int choice2 = sc.nextInt();
             sc.nextLine();
@@ -242,10 +267,13 @@ public class Friend {
                     deleteFriend(user);
                     break;
                 case 4:
-                    Chat chat =new Chat(loggedInUser);
+                    Chat chat = new Chat(loggedInUser);
                     chat.startChatting(user);
                     break;
                 case 5:
+                    PostManager post = new PostManager(loggedInUser);
+                    post.viewPost(user);
+                case 6:
                     exit2 = true;
                     System.out.println("Exit successfully");
                     break;
@@ -257,35 +285,35 @@ public class Friend {
     }
 
     // follow friend degree
-    public void displayfriendRecommend() {
-         List<User> friend = graph.getRecommendedConnections(loggedInUser);
+    public void displayfriendRecommend() throws SQLException {
+        List<User> friend = graph.getRecommendedConnections(loggedInUser);
 
-    if (friend.isEmpty()) {
-        System.out.println("No friend recommendations available.");
-    } else {
-        System.out.println("Friend Recommendations:");
-        int count = 1;
-        for (User recommendedUser : friend) {
-            System.out.println(count + ". " + recommendedUser.getUsername());
-            count++;
-        }
-
-        Scanner sc = new Scanner(System.in);
-        int friendChoice = 0;
-
-        while (friendChoice < 1 || friendChoice > friend.size()) {
-            System.out.print("Choose a friend from the recommendation list (enter the number): ");
-            friendChoice = sc.nextInt();
-            sc.nextLine();
-
-            if (friendChoice < 1 || friendChoice > friend.size()) {
-                System.out.println("Invalid choice! Please try again.");
+        if (friend.isEmpty()) {
+            System.out.println("No friend recommendations available.");
+        } else {
+            System.out.println("Friend Recommendations:");
+            int count = 1;
+            for (User recommendedUser : friend) {
+                System.out.println(count + ". " + recommendedUser.getUsername());
+                count++;
             }
-        }
 
-        User selectedFriend = friend.get(friendChoice - 1);
-        action(selectedFriend);
-    }
+            Scanner sc = new Scanner(System.in);
+            int friendChoice = 0;
+
+            while (friendChoice < 1 || friendChoice > friend.size()) {
+                System.out.print("Choose a friend from the recommendation list (enter the number): ");
+                friendChoice = sc.nextInt();
+                sc.nextLine();
+
+                if (friendChoice < 1 || friendChoice > friend.size()) {
+                    System.out.println("Invalid choice! Please try again.");
+                }
+            }
+
+            User selectedFriend = friend.get(friendChoice - 1);
+            action(selectedFriend);
+        }
     }
 
     // implement the scoring method for public recommendation
