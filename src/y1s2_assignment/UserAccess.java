@@ -188,12 +188,12 @@ public class UserAccess {
         }
     }
 
-    public void Search() {
+    public void Search() throws SQLException {
         SearchEngine search = new SearchEngine(loggedInUser);
         search.searchUsers();
     }
 
-    public void Friend() {
+    public void Friend() throws SQLException {
         Friend friend = new Friend(loggedInUser);
         friend.friendMenu();
     }

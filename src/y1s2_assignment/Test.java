@@ -63,7 +63,7 @@ public class Test {
                     while (!backToMainMenu) {
                         System.out.println("==============================================\nUSER MENU");
                         System.out.println("1. Edit Account");
-                        System.out.println("2. Display Account");
+                        System.out.println("2. Display Profile");
                         System.out.println("3. Search User");
                         System.out.println("4. Friend Menu");
                         System.out.println("5. Messenger");
@@ -93,6 +93,7 @@ public class Test {
                                     break;
                                 case 6:
                                     userAccess.Post();
+                                    break;
                                 case 7:
                                     System.out.println("Log out successfully. Bye~\n");
                                     loggedInUser = null;

@@ -273,7 +273,7 @@ public class Chat {
             }
         }
     }
-
+    // No use yet
     private LocalDateTime getLatestChatTimestamp(User friend) {
         if (friend == null) {
             System.out.println("Invalid friend.");

@@ -200,6 +200,7 @@ public class User {
         }
         this.Jobs = Jobs;
     }
+    
 
     public ArrayList<String> getFriends() {
         return Friends;

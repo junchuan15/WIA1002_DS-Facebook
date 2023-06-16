@@ -4,6 +4,7 @@
  */
 package y1s2_assignment;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,7 +37,7 @@ public class SearchEngine {
         database.readFromTable(accountIDList, usernameList, emailList, contactNumberList, nameList);
     }
 
-    public void searchUsers() {
+    public void searchUsers() throws SQLException {
         Scanner sc = new Scanner(System.in);
         boolean exit1 = false;
 
@@ -79,7 +80,7 @@ public class SearchEngine {
         }
     }
 
-    public void searchField(ArrayList<String> inputList, String attribute) {
+    public void searchField(ArrayList<String> inputList, String attribute) throws SQLException {
         Scanner sc = new Scanner(System.in);
 
         String search = null;
@@ -218,7 +219,7 @@ public class SearchEngine {
         return false;
     }
 
-    public void action(User searchedUser) {
+    public void action(User searchedUser) throws SQLException {
         friendManager.action(searchedUser);
     }
 }
