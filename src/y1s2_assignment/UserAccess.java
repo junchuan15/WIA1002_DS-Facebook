@@ -27,6 +27,58 @@ public class UserAccess {
         this.database = new DatabaseSQL();
     }
 
+    public void userMenu() throws SQLException {
+        Scanner sc = new Scanner(System.in);
+        boolean backToMainMenu = false;
+
+        while (!backToMainMenu) {
+            System.out.println("==============================================\nUSER MENU");
+            System.out.println("1. Edit Account");
+            System.out.println("2. Display Profile");
+            System.out.println("3. Search User");
+            System.out.println("4. Friend Menu");
+            System.out.println("5. Messenger");
+            System.out.println("6. Posting");
+            System.out.println("7. Logout");
+            System.out.print("Enter your choice: ");
+            String choiceStr = sc.nextLine();
+
+            if (choiceStr.matches("\\d+")) {
+                int choice = Integer.parseInt(choiceStr);
+
+                switch (choice) {
+                    case 1:
+                        EditProfile();
+                        break;
+                    case 2:
+                        viewAccount(loggedInUser);
+                        break;
+                    case 3:
+                        Search();
+                        break;
+                    case 4:
+                        Friend();
+                        break;
+                    case 5:
+                        Chat();
+                        break;
+                    case 6:
+                        Post();
+                        break;
+                    case 7:
+                        System.out.println("Log out successfully. Bye~\n");
+                        backToMainMenu = true;
+                        break;
+                    default:
+                        System.out.println("Invalid choice!");
+                        break;
+                }
+            } else {
+                System.out.println("Invalid input! Please enter a number.");
+            }
+        }
+    }
+
     public void EditProfile() {
         Validation validate = new Validation();
         Scanner sc = new Scanner(System.in);
@@ -202,8 +254,8 @@ public class UserAccess {
         Chat chat = new Chat(loggedInUser);
         chat.chatManager();
     }
-    
-    public void Post() throws SQLException{
+
+    public void Post() throws SQLException {
         PostManager post = new PostManager(loggedInUser);
         post.PostMenu();
     }

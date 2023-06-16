@@ -1,3 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -20,7 +37,6 @@ public class Friend {
 
     private User loggedInUser;
     private DatabaseSQL database;
-    private UserAccess userAccess;
     private ConnectionGraph graph;
     Scanner scanner = new Scanner(System.in);
 
@@ -28,7 +44,6 @@ public class Friend {
         this.loggedInUser = loggedInUser;
         this.database = new DatabaseSQL();
         this.graph = database.createGraph();
-        this.userAccess = userAccess;
     }
 
     public void sendFriendRequest(User user) {
@@ -262,6 +277,7 @@ public class Friend {
             sc.nextLine();
             switch (choice2) {
                 case 1:
+                    UserAccess userAccess = new UserAccess();
                     userAccess.viewAccount(user);
                     break;
                 case 2:

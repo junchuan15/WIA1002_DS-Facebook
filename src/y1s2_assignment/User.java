@@ -4,6 +4,7 @@
  */
 package y1s2_assignment;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Stack;
@@ -33,6 +34,9 @@ public class User {
     private ArrayList<String> SentRequests;
     private ArrayList<String> ReceivedRequests;
     private LinkedList<Post> posts;
+    private LinkedList<String> history;
+    private boolean banned;
+    private LocalDateTime banEndTime;
 
     public User(Builder builder) {
         this.accountID = builder.accountID;
@@ -56,9 +60,41 @@ public class User {
 
     }
 
-    public User(String accountID) {
-        this.accountID = accountID;
+    public User() {
+        this.history = new LinkedList<>();
         this.posts = new LinkedList<>();
+        this.banned = false;
+        this.banEndTime = null;
+    }
+
+    public boolean isBanned() {
+        return banned;
+    }
+
+    public void setBanned(boolean banned) {
+        this.banned = banned;
+    }
+
+    public LocalDateTime getBanEndTime() {
+        return banEndTime;
+    }
+
+    public void setBanEndTime(LocalDateTime banEndTime) {
+        this.banEndTime = banEndTime;
+    }
+
+    public LinkedList<String> getHistory() {
+        if (history == null) {
+            history = new LinkedList<>();
+        }
+        return history;
+    }
+
+    public void addHistory(String str) {
+        if (history == null) {
+            history = new LinkedList<>();
+        }
+        history.add(str);
     }
 
     public String getRole() {
@@ -125,7 +161,7 @@ public class User {
         this.NumberOfFriends = NumberOfFriends;
     }
 
-     public void addPost(Post post) {
+    public void addPost(Post post) {
         if (posts == null) {
             posts = new LinkedList<>();
         }
@@ -200,7 +236,6 @@ public class User {
         }
         this.Jobs = Jobs;
     }
-    
 
     public ArrayList<String> getFriends() {
         return Friends;
@@ -361,7 +396,6 @@ public class User {
             if (this.ReceivedRequests == null) {
                 this.ReceivedRequests = new ArrayList<>();
             }
-            this.ReceivedRequests = this.ReceivedRequests;
             return this;
         }
 

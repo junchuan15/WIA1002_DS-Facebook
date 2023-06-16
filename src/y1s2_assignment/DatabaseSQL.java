@@ -685,4 +685,49 @@ public class DatabaseSQL {
             }
         }
     }
+
+    public ArrayList<Post> getAllPosts() {
+        ArrayList<Post> posts = new ArrayList<>();
+
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String query = "SELECT * FROM userspost";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet rs = statement.executeQuery();
+
+            while (rs.next()) {
+                LocalDateTime timeStamp = rs.getTimestamp("PostTime").toLocalDateTime();
+                int postID = rs.getInt("Post_ID");
+                String accountID = rs.getString("Account_ID");
+                String content = rs.getString("Content");
+                String mediaPath = rs.getString("MediaPath");
+                String statusString = rs.getString("status");
+                Post.Status status = Post.Status.valueOf(statusString);
+                int likes = rs.getInt("Num_Likes");
+                int comments = rs.getInt("Num_Comments");
+
+                Post.PostBuilder postBuilder;
+                if (mediaPath != null && !mediaPath.isEmpty()) {
+                    postBuilder = new Post.PostBuilder(timeStamp, postID, accountID, content, mediaPath, status);
+                } else {
+                    postBuilder = new Post.PostBuilder(timeStamp, postID, accountID, content, status);
+                }
+
+                Post post = postBuilder
+                        .setLikes(likes)
+                        .setComments(comments)
+                        .build();
+
+                posts.add(post);
+            }
+
+            rs.close();
+            statement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return posts;
+    }
 }

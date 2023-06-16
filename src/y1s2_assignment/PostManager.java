@@ -5,8 +5,7 @@
 package y1s2_assignment;
 
 import java.awt.Desktop;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,7 +14,6 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.InputMismatchException;
 import java.util.LinkedList;
 import java.util.Scanner;
@@ -28,19 +26,25 @@ public class PostManager {
 
     private User loggedinUser;
     private DatabaseSQL database;
-    private LinkedList<String> history;
     Scanner sc = new Scanner(System.in);
+
+    public PostManager() {
+    }
 
     public PostManager(User loggedinUser) {
         this.loggedinUser = loggedinUser;
         database = new DatabaseSQL();
-        history = new LinkedList<>();
     }
 
     public void uploadPost() {
         System.out.println("==============================================\nWhat's on your mind, " + loggedinUser.getUsername() + "?");
         String content = sc.nextLine();
-
+        boolean containsBadWords = BadWordsChecker(content);
+        while (containsBadWords) {
+            System.out.println("Your post contains profane words. Please rephrase.");
+            content = sc.nextLine();
+            containsBadWords = BadWordsChecker(content);
+        }
         String choice;
         boolean validChoice = false;
         while (!validChoice) {
@@ -122,6 +126,23 @@ public class PostManager {
         database.uploadPost(post);
         performAction("PostID:" + String.valueOf(post.getPostID()) + " Created A Post");
         System.out.println("Post created successfully.");
+    }
+
+    public boolean BadWordsChecker(String content) {
+        try ( BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\Asus\\Documents\\NetBeansProjects\\Y1S2_Assignment\\profane_words.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String profaneWord = line.trim();
+                if (content.toLowerCase().contains(profaneWord.toLowerCase())) {
+                    return true;
+                }
+            }
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // Menu in user interface
@@ -289,7 +310,8 @@ public class PostManager {
                 System.out.println("5. Comment on Post");
                 System.out.println("6. View Likes");
                 System.out.println("7. View Comments");
-                System.out.println("8. Back");
+                System.out.println("8. Report Post");
+                System.out.println("9. Back");
                 System.out.print("Enter your choice: ");
                 int choice = sc.nextInt();
                 sc.nextLine();
@@ -325,6 +347,9 @@ public class PostManager {
                         viewComments(currentPost);
                         break;
                     case 8:
+                        reportPost(currentPost, user);
+                        break;
+                    case 9:
                         exit = true;
                         break;
                     default:
@@ -401,6 +426,24 @@ public class PostManager {
         database.updatePost(post, "Num_Comments", post.getComments());
     }
 
+    public void reportPost(Post post, User user) {
+        System.out.print("Enter the reason for reporting this post: ");
+        String reason = "";
+        while (reason.isEmpty()) {
+            reason = sc.nextLine().trim();
+
+            if (reason.isEmpty()) {
+                System.out.println("Reason cannot be empty. Please try again.");
+            }
+        }
+        String reportString = user.getUsername() + ":" + reason;
+        ArrayList<String> reportList = database.getList(post, "Report");
+        reportList.add(reportString);
+        performAction("PostID:" + String.valueOf(post.getPostID()) + " Report '" + reason + "' Post by " + user.getUsername());
+        database.updatePost(post, "Report", reportList);
+        System.out.println("Post reported successfully.");
+    }
+
     public void viewLikes(Post post) {
         ArrayList<String> likeList = database.getList(post, "LikeList");
         System.out.println("< 👍 " + post.getLikes() + " likes>");
@@ -440,42 +483,41 @@ public class PostManager {
         }
 
     }
-    
-     public void performAction(String action) {
+
+    public void performAction(String action) {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String timestamp = now.format(formatter);
         String str = timestamp + " - " + action;
-        history.add(str);
-         System.out.println(history.toString());
+        loggedinUser.addHistory(str);
     }
 
     public void traceBack() throws SQLException {
-        if (history == null) {
+        if (loggedinUser.getHistory() == null) {
             System.out.println("Action history is not available.");
             return;
         }
 
         System.out.println("Action History:");
-        if (history.isEmpty()) {
+        if (loggedinUser.getHistory().isEmpty()) {
             System.out.println("No actions found.");
             return;
         }
 
-        for (int i = 0; i < history.size(); i++) {
-            System.out.println((i + 1) + ". " + history.get(i));
+        for (int i = 0; i < loggedinUser.getHistory().size(); i++) {
+            System.out.println((i + 1) + ". " + loggedinUser.getHistory().get(i));
         }
 
         System.out.print("Enter the index of the action you want to trace back: ");
         int choice = sc.nextInt();
         sc.nextLine();
 
-        if (choice < 1 || choice > history.size()) {
+        if (choice < 1 || choice > loggedinUser.getHistory().size()) {
             System.out.println("Invalid choice.");
             return;
         }
 
-        String action = history.get(choice - 1);
+        String action = loggedinUser.getHistory().get(choice - 1);
         String[] parts = action.split(" - ");
         if (parts.length < 2) {
             System.out.println("Invalid action format.");
@@ -499,7 +541,7 @@ public class PostManager {
             System.out.println("Invalid post ID.");
             return;
         }
-        User user = database.getUser("UserName",username );
+        User user = database.getUser("UserName", username);
         LinkedList<Post> posts = database.getPosts(user.getAccountID());
         for (Post post : posts) {
             if (post.getPostID() == postID) {
@@ -515,5 +557,4 @@ public class PostManager {
 
         System.out.println("Post not found in the user's posts.");
     }
-
 }

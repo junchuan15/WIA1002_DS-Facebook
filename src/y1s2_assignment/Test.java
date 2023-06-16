@@ -8,23 +8,22 @@ import java.sql.SQLException;
 import java.util.Scanner;
 
 public class Test {
+
     public static void main(String[] args) throws SQLException {
         Scanner sc = new Scanner(System.in);
         AccountManager accountManager = new AccountManager();
         Validation validate = new Validation();
         User loggedInUser = null;
-        boolean login = false;
-        boolean exit = false;
 
-        while (!exit) {
-            if (!login) {
+        while (true) {
+            if (loggedInUser == null) {
                 System.out.println("Welcome to TheFacebook!");
                 System.out.println("==============================================\nMAIN MENU");
                 System.out.println("1. Register");
                 System.out.println("2. Login");
                 System.out.println("3. Exit");
                 System.out.print("Enter your choice: ");
-                 String choiceStr = sc.nextLine();
+                String choiceStr = sc.nextLine();
 
                 if (choiceStr.matches("\\d+")) {
                     int choice = Integer.parseInt(choiceStr);
@@ -36,15 +35,14 @@ public class Test {
                         case 2:
                             loggedInUser = accountManager.userLogin();
                             if (loggedInUser != null) {
-                                login = true;
+                                System.out.println("Login successful!");
                             } else {
                                 System.out.println("Invalid username or password. Please try again.");
                             }
                             break;
                         case 3:
-                            exit = true;
                             System.out.println("Exiting the program...");
-                            break;
+                            return; // End the program
                         default:
                             System.out.println("Invalid choice!");
                             break;
@@ -56,58 +54,13 @@ public class Test {
                 if (validate.isAdmin(loggedInUser)) {
                     AdminAccess adminAccess = new AdminAccess(loggedInUser);
                     adminAccess.adminMenu();
+                    loggedInUser = null;
+                    continue; 
                 } else {
                     UserAccess userAccess = new UserAccess(loggedInUser);
-                    boolean backToMainMenu = false;
-
-                    while (!backToMainMenu) {
-                        System.out.println("==============================================\nUSER MENU");
-                        System.out.println("1. Edit Account");
-                        System.out.println("2. Display Profile");
-                        System.out.println("3. Search User");
-                        System.out.println("4. Friend Menu");
-                        System.out.println("5. Messenger");
-                        System.out.println("6. Posting");
-                        System.out.println("7. Logout");
-                        System.out.print("Enter your choice: ");
-                         String choiceStr = sc.nextLine();
-
-                        if (choiceStr.matches("\\d+")) {
-                            int choice = Integer.parseInt(choiceStr);
-
-                            switch (choice) {
-                                case 1:
-                                    userAccess.EditProfile();
-                                    break;
-                                case 2:
-                                    userAccess.viewAccount(loggedInUser);
-                                    break;
-                                case 3:
-                                    userAccess.Search();
-                                    break;
-                                case 4:
-                                    userAccess.Friend();
-                                    break;
-                                case 5:
-                                    userAccess.Chat();
-                                    break;
-                                case 6:
-                                    userAccess.Post();
-                                    break;
-                                case 7:
-                                    System.out.println("Log out successfully. Bye~\n");
-                                    loggedInUser = null;
-                                    login = false;
-                                    backToMainMenu = true;
-                                    break;
-                                default:
-                                    System.out.println("Invalid choice!");
-                                    break;
-                            }
-                        } else {
-                            System.out.println("Invalid input! Please enter a number.");
-                        }
-                    }
+                    userAccess.userMenu();
+                    loggedInUser = null;
+                    continue; 
                 }
             }
         }
