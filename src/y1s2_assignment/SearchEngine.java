@@ -95,38 +95,43 @@ public class SearchEngine {
         String search;
 
         do {
-            System.out.print("Type a " + attribute + ": ");
+            System.out.print("Search " + attribute + ": ");
             search = sc.nextLine();
+            System.out.println("==============================================");
             if (search.isEmpty()) {
                 System.out.println("Input cannot be empty. Please try again.");
             }
         } while (search.isEmpty());
 
-        display(inputList, search);
+        ArrayList<String> sortedList = display(inputList, search);
 
-        String correct;
-        boolean found = false;
+        for (int i = 0; i < sortedList.size(); i++) {
+            System.out.println((i + 1) + ". " + sortedList.get(i));
+        }
+
+        int selectedIndex = 0;
 
         do {
-            System.out.print("Enter the " + attribute + " you want to find: ");
-            correct = sc.nextLine();
-            if (correct.isEmpty()) {
-                System.out.println("Input cannot be empty. Please try again.");
-            } else {
-                for (String input : inputList) {
-                    if (input.equalsIgnoreCase(correct)) {
-                        found = true;
-                        break;
-                    }
+            System.out.println("==============================================");
+            System.out.print("Enter the index of the " + attribute + " you want to find: ");
+            String input = sc.nextLine();
+
+            try {
+                selectedIndex = Integer.parseInt(input);
+                if (selectedIndex >= 1 && selectedIndex <= sortedList.size()) {
+                    break;
+                } else {
+                    System.out.println("Invalid index! Please try again.");
                 }
-                if (!found) {
-                    System.out.println("Invalid " + attribute + "! Please try again.");
-                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Please enter a valid index.");
             }
-        } while (correct.isEmpty() || !found);
+        } while (true);
+
+        String selectedValue = sortedList.get(selectedIndex - 1);
 
         try {
-            User searchedUser = database.getUser(attribute, correct);
+            User searchedUser = database.getUser(attribute, selectedValue);
 
             if (searchedUser != null) {
                 friendManager.action(searchedUser);
@@ -138,7 +143,7 @@ public class SearchEngine {
         }
     }
 
-    public void display(ArrayList<String> inputList, String searchKey) {
+    public ArrayList<String> display(ArrayList<String> inputList, String searchKey) {
         ArrayList<ArrayList<String>> similarity = new ArrayList<>();
         ArrayList<String> row1 = new ArrayList<>(inputList);
         ArrayList<String> row2 = new ArrayList<>();
@@ -166,21 +171,25 @@ public class SearchEngine {
 
         Collections.sort(similarity, comparator);
 
+        ArrayList<String> sortedList = new ArrayList<>();
+
         if (similarity.size() >= 10) {
             for (int i = 0; i < 10; i++) {
                 String username = similarity.get(i).get(0);
                 if (!username.equals(loggedInUser.getUsername())) {
-                    System.out.println(username);
+                    sortedList.add(username);
                 }
             }
         } else if (similarity.size() > 0 && similarity.size() < 10) {
             for (int i = 0; i < similarity.size(); i++) {
                 String username = similarity.get(i).get(0);
                 if (!username.equals(loggedInUser.getUsername())) {
-                    System.out.println(username);
+                    sortedList.add(username);
                 }
             }
         }
+
+        return sortedList;
     }
 
     public double DamerauLevenshteinDistance(String searchKey, String element) {
