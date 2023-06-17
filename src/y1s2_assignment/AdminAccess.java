@@ -32,17 +32,20 @@ public class AdminAccess extends UserAccess {
 
     public void adminMenu() throws SQLException {
         boolean backToMainMenu = false;
+
         while (!backToMainMenu) {
-            System.out.println("==============================================\nADMIN MENU");
-            System.out.println("1. Admin Control");
-            System.out.println("2. Edit Account");
-            System.out.println("3. Display Profile");
-            System.out.println("4. Search User");
-            System.out.println("5. Friend Menu");
-            System.out.println("6. Messenger");
-            System.out.println("7. Posting");
-            System.out.println("8. Logout");
-            System.out.print("Enter your choice: ");
+            System.out.println("==============================================");
+            System.out.println("                 ADMIN MENU                    ");
+            System.out.println("==============================================");
+            System.out.println("          1. Admin Control");
+            System.out.println("          2. Display Profile");
+            System.out.println("          3. Search User");
+            System.out.println("          4. Manage Friends");
+            System.out.println("          5. Messenger");
+            System.out.println("          6. Post");
+            System.out.println("          7. Logout");
+            System.out.println("==============================================");
+            System.out.print("               Enter your choice: ");
             String choiceStr = sc.nextLine();
 
             if (choiceStr.matches("\\d+")) {
@@ -53,25 +56,22 @@ public class AdminAccess extends UserAccess {
                         adminControl();
                         break;
                     case 2:
-                        EditProfile();
+                        displayProfile();
                         break;
                     case 3:
-                        viewAccount(loggedInUser);
-                        break;
-                    case 4:
                         Search();
                         break;
-                    case 5:
+                    case 4:
                         Friend();
                         break;
-                    case 6:
+                    case 5:
                         Chat();
                         break;
-                    case 7:
+                    case 6:
                         Post();
                         break;
-                    case 8:
-                        System.out.println("Log out successfully. Bye~\n");
+                    case 7:
+                        System.out.println("Logout successful. Goodbye!\n");
                         backToMainMenu = true;
                         break;
                     default:
@@ -88,15 +88,18 @@ public class AdminAccess extends UserAccess {
         boolean backToMainMenu = false;
 
         while (!backToMainMenu) {
-            System.out.println("==============================================\nADMIN CONTROL   ");
-            System.out.println("1. Delete User");
-            System.out.println("2. Delete Post");
-            System.out.println("3. Ban User");
-            System.out.println("4. Unban User");
-            System.out.println("5. Add Bad Words");
-            System.out.println("6. View User Reports");
-            System.out.println("7. Back to Admin Menu");
-            System.out.print("Enter your choice: ");
+            System.out.println("==============================================");
+            System.out.println("               ADMIN CONTROL                   ");
+            System.out.println("==============================================");
+            System.out.println("          1. Delete User");
+            System.out.println("          2. Delete Post");
+            System.out.println("          3. Ban User");
+            System.out.println("          4. Unban User");
+            System.out.println("          5. Add Bad Words");
+            System.out.println("          6. View User Reports");
+            System.out.println("          7. Back to Admin Menu");
+            System.out.println("==============================================");
+            System.out.print("               Enter your choice: ");
             String choiceStr = sc.nextLine();
 
             if (choiceStr.matches("\\d+")) {
@@ -139,7 +142,7 @@ public class AdminAccess extends UserAccess {
         System.out.println("Users:\n------------------------");
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
-            if (!user.getRole().equals("admin")) {
+            if (!user.getRole().equals("Admin")) {
                 System.out.println("Index: " + i);
                 System.out.println("Account ID: " + user.getAccountID());
                 System.out.println("Username: " + user.getUsername());
@@ -148,7 +151,6 @@ public class AdminAccess extends UserAccess {
         }
 
         System.out.print("Enter the index of the user to delete: ");
-        System.out.println("==============================================");
         if (sc.hasNextInt()) {
             int index = sc.nextInt();
             sc.nextLine();
@@ -193,7 +195,6 @@ public class AdminAccess extends UserAccess {
         }
 
         System.out.print("Enter the index of the post to delete: ");
-        System.out.println("==============================================");
         if (sc.hasNextInt()) {
             int index = sc.nextInt();
             sc.nextLine();
@@ -231,6 +232,9 @@ public class AdminAccess extends UserAccess {
         System.out.println("Users:\n------------------------");
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
+            if (user.getRole().equalsIgnoreCase("Admin")) {
+                continue;
+            }
             System.out.println("Index: " + i);
             System.out.println("Account ID: " + user.getAccountID());
             System.out.println("Name: " + user.getName());
@@ -239,13 +243,16 @@ public class AdminAccess extends UserAccess {
         }
 
         System.out.print("Enter the index of the user to ban: ");
-        System.out.println("==============================================");
         if (sc.hasNextInt()) {
             int index = sc.nextInt();
             sc.nextLine();
 
             if (index >= 0 && index < users.size()) {
                 User user = users.get(index);
+                if (user.getRole().equalsIgnoreCase("Admin")) {
+                    System.out.println("Cannot ban an admin user.");
+                    return;
+                }
                 System.out.println("User Details:\n------------------------");
                 System.out.println("Account ID: " + user.getAccountID());
                 System.out.println("Name: " + user.getName());

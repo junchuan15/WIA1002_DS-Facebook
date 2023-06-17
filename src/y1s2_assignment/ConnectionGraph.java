@@ -5,8 +5,11 @@
 package y1s2_assignment;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
 public class ConnectionGraph {
 
@@ -27,6 +30,10 @@ public class ConnectionGraph {
     }
 
     public void addEdge(User user, User friend) {
+        if (user.equals(friend)) {
+            return;
+        }
+
         Vertex vertex1 = getVertex(user);
         Vertex vertex2 = getVertex(friend);
 
@@ -40,13 +47,17 @@ public class ConnectionGraph {
         Vertex vertex = getVertex(user);
         if (vertex != null) {
             vertices.remove(vertex);
-            for (Vertex v : vertices) {
-                v.removeNeighbour(vertex);
+            for (Vertex neighbor : vertex.getNeighbours()) {
+                neighbor.removeNeighbour(vertex);
             }
         }
     }
 
     public void removeEdge(User user1, User user2) {
+        if (user1.equals(user2)) {
+            return;
+        }
+
         Vertex vertex1 = getVertex(user1);
         Vertex vertex2 = getVertex(user2);
 
@@ -56,85 +67,40 @@ public class ConnectionGraph {
         }
     }
 
-    public List<String> showFirstDegreeConnections(User user) {
-        List<String> firstDegree = new ArrayList<>();
-        Vertex vertex = getVertex(user);
+    public List<User> showFirstDegreeConnections(User user) {
+        List<User> firstDegree = new ArrayList<>();
+        Vertex vertex = findVertex(user);
 
         if (vertex != null) {
-            LinkedList<Vertex> neighbours = vertex.getNeighbours();
-            for (Vertex neighbour : neighbours) {
-                firstDegree.add(neighbour.getUser().getUsername());
+            for (Vertex neighbour : vertex.getNeighbours()) {
+                firstDegree.add(neighbour.getUser());
             }
-        } else {
-            firstDegree.add("Vertex " + user.getUsername() + " not found.");
-        }
-
+        } 
         return firstDegree;
     }
 
-    public List< String> showSecondDegreeConnections(User loggedInUser) {
-        List< String> secondDegree = new ArrayList<>();
-        Vertex loggedInUserVertex = getVertex(loggedInUser);
+    public List<User> showSecondDegreeConnections(User loggedInUser) {
+        List<User> secondDegree = new ArrayList<>();
+        List<String> usernames = bfs(loggedInUser, 2);
 
-        if (loggedInUserVertex != null) {
-            LinkedList<Vertex> firstDegreeNeighbours = loggedInUserVertex.getNeighbours();
-
-            for (Vertex firstDegreeNeighbor : firstDegreeNeighbours) {
-                LinkedList<Vertex> secondDegreeNeighbours = firstDegreeNeighbor.getNeighbours();
-                for (Vertex secondDegreeNeighbour : secondDegreeNeighbours) {
-                    if (!secondDegreeNeighbour.equals(loggedInUserVertex) && !firstDegreeNeighbours.contains(secondDegreeNeighbour)) {
-                        secondDegree.add(secondDegreeNeighbour.getUser().getUsername());
-                    }
-                }
+        for (String username : usernames) {
+            User user = database.getUser("UserName", username);
+            if (user != null) {
+                secondDegree.add(user);
             }
         }
 
         return secondDegree;
     }
 
-    /*public List< String> showFirstAndSecondDegreeConnections(User user) {
-        List< String> connections = new ArrayList<>();
-        Vertex vertex = getVertex(user);
+    public List<User> showThirdDegreeConnections(User loggedInUser) {
+        List<User> thirdDegree = new ArrayList<>();
+        List<String> usernames = bfs(loggedInUser, 3);
 
-        if (vertex != null) {
-            LinkedList<Vertex> firstDegreeNeighbours = vertex.getNeighbours();
-            for (Vertex firstDegreeNeighbour : firstDegreeNeighbours) {
-                connections.add(firstDegreeNeighbour.getUser().getUsername());
-
-                LinkedList<Vertex> secondDegreeNeighbours = firstDegreeNeighbour.getNeighbours();
-                for (Vertex secondDegreeNeighbour : secondDegreeNeighbours) {
-                    if (!secondDegreeNeighbour.equals(vertex) && !firstDegreeNeighbours.contains(secondDegreeNeighbour)) {
-                        connections.add(secondDegreeNeighbour.getUser().getUsername());
-                    }
-                }
-            }
-        } else {
-            connections.add("Vertex " + user.getUsername() + " not found.");
-        }
-
-        return connections;
-    }*/
-    public List<String> showThirdDegreeConnections(User loggedInUser) {
-        List<String> thirdDegree = new ArrayList<>();
-        Vertex loggedInUserVertex = getVertex(loggedInUser);
-
-        if (loggedInUserVertex != null) {
-            LinkedList<Vertex> firstDegreeNeighbours = loggedInUserVertex.getNeighbours();
-
-            for (Vertex firstDegreeNeighbor : firstDegreeNeighbours) {
-                LinkedList<Vertex> secondDegreeNeighbours = firstDegreeNeighbor.getNeighbours();
-                for (Vertex secondDegreeNeighbour : secondDegreeNeighbours) {
-                    if (!secondDegreeNeighbour.equals(loggedInUserVertex) && !firstDegreeNeighbours.contains(secondDegreeNeighbour)) {
-                        thirdDegree.add(secondDegreeNeighbour.getUser().getUsername());
-                        LinkedList<Vertex> thirdDegreeNeighbours = secondDegreeNeighbour.getNeighbours();
-                        for (Vertex thirdDegreeNeighbour : thirdDegreeNeighbours) {
-                            if (!thirdDegreeNeighbour.equals(firstDegreeNeighbor) && !thirdDegreeNeighbour.equals(loggedInUserVertex)
-                                    && !secondDegreeNeighbours.contains(thirdDegreeNeighbour)) {
-                                thirdDegree.add(thirdDegreeNeighbour.getUser().getUsername());
-                            }
-                        }
-                    }
-                }
+        for (String username : usernames) {
+            User user = database.getUser("UserName", username);
+            if (user != null) {
+                thirdDegree.add(user);
             }
         }
 
@@ -143,50 +109,89 @@ public class ConnectionGraph {
 
     public List<User> getRecommendedConnections(User loggedInUser) {
         List<User> recommendedConnections = new ArrayList<>();
-        Vertex loggedInUserVertex = getVertex(loggedInUser);
+        Vertex loggedInUserVertex = findVertex(loggedInUser);
 
         if (loggedInUserVertex != null) {
-            LinkedList<Vertex> firstDegreeNeighbours = loggedInUserVertex.getNeighbours();
-            List<Vertex> secondDegreeConnections = new ArrayList<>();
-            for (Vertex firstDegreeNeighbor : firstDegreeNeighbours) {
-                LinkedList<Vertex> secondDegreeNeighbours = firstDegreeNeighbor.getNeighbours();
-                for (Vertex secondDegreeNeighbour : secondDegreeNeighbours) {
-                    if (!secondDegreeNeighbour.equals(loggedInUserVertex) && !firstDegreeNeighbours.contains(secondDegreeNeighbour)) {
-                        secondDegreeConnections.add(secondDegreeNeighbour);
+            Set<Vertex> visited = new HashSet<>();
+            Queue<Vertex> queue = new LinkedList<>();
+            visited.add(loggedInUserVertex);
+            int level = 1;
+
+            queue.offer(loggedInUserVertex);
+
+            while (!queue.isEmpty() && level <= 3) {
+                int size = queue.size();
+
+                for (int i = 0; i < size; i++) {
+                    Vertex current = queue.poll();
+
+                    for (Vertex neighbour : current.getNeighbours()) {
+                        if (!visited.contains(neighbour)) {
+                            visited.add(neighbour);
+                            queue.offer(neighbour);
+                            if (level == 2 || level == 3) {
+                                recommendedConnections.add(neighbour.getUser());
+                            }
+                        }
                     }
                 }
+                level++;
             }
 
-            secondDegreeConnections.sort((v1, v2) -> {
-                int mutualConnections1 = countMutualConnections(loggedInUserVertex, v1);
-                int mutualConnections2 = countMutualConnections(loggedInUserVertex, v2);
-                return Integer.compare(mutualConnections2, mutualConnections1);
-            });
+            for (User user : recommendedConnections) {
+                Vertex userVertex = findVertex(user);
 
-            List<Vertex> thirdDegreeConnections = new ArrayList<>();
-            for (Vertex secondDegreeConnection : secondDegreeConnections) {
-                LinkedList<Vertex> thirdDegreeNeighbours = secondDegreeConnection.getNeighbours();
-                for (Vertex thirdDegreeNeighbour : thirdDegreeNeighbours) {
-                    if (!thirdDegreeNeighbour.equals(loggedInUserVertex) && !firstDegreeNeighbours.contains(thirdDegreeNeighbour)
-                            && !secondDegreeConnections.contains(thirdDegreeNeighbour)) {
-                        thirdDegreeConnections.add(thirdDegreeNeighbour);
-                    }
-                }
-            }
-
-            for (Vertex secondDegreeConnection : secondDegreeConnections) {
-                recommendedConnections.add(secondDegreeConnection.getUser());
-            }
-
-            for (Vertex thirdDegreeConnection : thirdDegreeConnections) {
-                recommendedConnections.add(thirdDegreeConnection.getUser());
             }
         }
 
         return recommendedConnections;
     }
 
-    private int countMutualConnections(Vertex vertex1, Vertex vertex2) {
+    private List<String> bfs(User loggedInUser, int degree) {
+        List<String> connections = new ArrayList<>();
+        Vertex loggedInUserVertex = findVertex(loggedInUser);
+
+        if (loggedInUserVertex != null) {
+            Set<Vertex> visited = new HashSet<>();
+            Queue<Vertex> queue = new LinkedList<>();
+            visited.add(loggedInUserVertex);
+            int level = 1;
+
+            queue.offer(loggedInUserVertex);
+
+            while (!queue.isEmpty() && level <= degree) {
+                int size = queue.size();
+
+                for (int i = 0; i < size; i++) {
+                    Vertex current = queue.poll();
+
+                    for (Vertex neighbour : current.getNeighbours()) {
+                        if (!visited.contains(neighbour)) {
+                            visited.add(neighbour);
+                            queue.offer(neighbour);
+                            if (level == degree) {
+                                connections.add(neighbour.getUser().getUsername());
+                            }
+                        }
+                    }
+                }
+                level++;
+            }
+        }
+
+        return connections;
+    }
+
+    Vertex findVertex(User user) {
+        for (Vertex vertex : vertices) {
+            if (vertex.getUser().equals(user)) {
+                return vertex;
+            }
+        }
+        return null;
+    }
+
+    public int countMutualConnections(Vertex vertex1, Vertex vertex2) {
         int count = 0;
         LinkedList<Vertex> neighbours1 = vertex1.getNeighbours();
         LinkedList<Vertex> neighbours2 = vertex2.getNeighbours();
@@ -200,25 +205,14 @@ public class ConnectionGraph {
         return count;
     }
 
-    public void findDegreeOfConnection(List<User> users) {
-        for (int i = 0; i < users.size(); i++) {
-            for (int j = i + 1; j < users.size(); j++) {
-                User user1 = users.get(i);
-                User user2 = users.get(j);
-                int degree = findDegreeOfConnection(user1, user2);
-                System.out.println("Degree of connection between " + user1.getUsername() + " and " + user2.getUsername() + ": " + degree);
-            }
-        }
-    }
-
-    private int findDegreeOfConnection(User user1, User user2) {
+    public int getShortestDistance(User user1, User user2) {
         Vertex vertex1 = getVertex(user1);
         Vertex vertex2 = getVertex(user2);
 
         if (vertex1 != null && vertex2 != null) {
             LinkedList<Vertex> queue = new LinkedList<>();
             boolean[] visited = new boolean[vertices.size()];
-            int[] degree = new int[vertices.size()];
+            int[] distance = new int[vertices.size()];
 
             queue.add(vertex1);
             visited[vertex1.getIndex()] = true;
@@ -227,27 +221,28 @@ public class ConnectionGraph {
                 Vertex current = queue.poll();
 
                 if (current.equals(vertex2)) {
-                    return degree[current.getIndex()];
+                    return distance[current.getIndex()];
                 }
 
                 LinkedList<Vertex> neighbours = current.getNeighbours();
-                int currentDegree = degree[current.getIndex()];
-                int nextDegree = currentDegree + 1;
+                int currentDistance = distance[current.getIndex()];
+                int nextDistance = currentDistance + 1;
 
                 for (Vertex neighbour : neighbours) {
                     int neighbourIndex = neighbour.getIndex();
                     if (!visited[neighbourIndex]) {
                         queue.add(neighbour);
                         visited[neighbourIndex] = true;
-                        degree[neighbourIndex] = nextDegree;
+                        distance[neighbourIndex] = nextDistance;
                     }
                 }
             }
         }
 
-        return -1; // Return -1 if the connection is not found
+        return -1; // Return -1 if the shortest distance is not found
     }
 
+    // Check whether the graph works
     public String showAdjacency() {
         StringBuilder sb = new StringBuilder();
 
@@ -289,7 +284,7 @@ public class ConnectionGraph {
 
     }
 
-    private class Vertex {
+    public class Vertex {
 
         private User user;
         private int index;

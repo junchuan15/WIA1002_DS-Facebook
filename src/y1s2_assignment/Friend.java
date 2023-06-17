@@ -1,20 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -28,6 +11,8 @@ import java.util.Comparator;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Stack;
+import y1s2_assignment.ConnectionGraph.Vertex;
 
 /**
  *
@@ -70,46 +55,9 @@ public class Friend {
         }
     }
 
-    public void pendingFriendRequest(String username, String action) {
-        User user = database.getUser("Username", username);
-        if (user == null) {
-            System.out.println("User not found.");
-            return;
-        }
-
-        if (action.equals("1")) {
-            ArrayList<String> pending = loggedInUser.getReceivedRequests();
-            loggedInUser.getReceivedRequests().remove(username);
-            ArrayList<String> friends1 = loggedInUser.getFriends();
-            friends1.add(username);
-            numFriendIncrement(loggedInUser);
-
-            ArrayList<String> sentRequest = user.getSentRequests();
-            sentRequest.remove(loggedInUser.getUsername());
-            ArrayList<String> friends2 = user.getFriends();
-            friends2.add(loggedInUser.getUsername());
-            numFriendIncrement(user);
-
-            System.out.println("Friend request from " + username + " is accepted. " + username + " is now your friend.");
-        } else {
-            ArrayList<String> pending = loggedInUser.getReceivedRequests();
-            loggedInUser.getReceivedRequests().remove(username);
-            ArrayList<String> sentRequest = user.getSentRequests();
-            sentRequest.remove(loggedInUser.getUsername());
-        }
-
-        database.updateUserDetail(loggedInUser);
-        database.updateUserDetail(user);
-    }
-
     public void numFriendIncrement(User user) {
         int numberOfFriends = user.getNumberOfFriends();
         user.setNumberOfFriends(numberOfFriends + 1);
-    }
-
-    public void numFriendDecrement(User user) {
-        int numberOfFriends = user.getNumberOfFriends();
-        user.setNumberOfFriends(numberOfFriends - 1);
     }
 
     public void deleteFriend(User user) {
@@ -119,36 +67,57 @@ public class Friend {
             return;
         }
 
-        System.out.print("Are you sure you want to delete " + user.getUsername() + " (Y/N)?: ");
-        Scanner scanner = new Scanner(System.in);
-        String choice = scanner.next();
-        if (choice.equalsIgnoreCase("Y")) {
-            friends.removeIf(friend -> friend.equals(user.getUsername()));
-            numFriendDecrement(loggedInUser);
-            database.updateUserDetail(loggedInUser);
+        String username = user.getUsername();
 
-            ArrayList<String> userFriends = user.getFriends();
-            userFriends.remove(loggedInUser.getUsername());
-            numFriendDecrement(user);
-            database.updateUserDetail(user);
-
-            System.out.println(user.getUsername() + " has been deleted from your friends list.");
+        if (friends.contains(username)) {
+            System.out.print("Are you sure you want to delete " + username + " (Y/N)?: ");
+            String choice = scanner.next();
+            if (choice.equalsIgnoreCase("Y")) {
+                removeFriend(loggedInUser, user);
+                System.out.println(username + " has been deleted from your friends list.");
+            } else {
+                System.out.println("Deletion canceled.");
+            }
+        } else if (loggedInUser.getReceivedRequests().contains(username)) {
+            System.out.println(username + " has sent you a friend request. Reject the friend request instead.");
+        } else if (loggedInUser.getSentRequests().contains(username)) {
+            System.out.println("You have sent a friend request to " + username + ". Cancel the friend request instead.");
         } else {
-            System.out.println("Deletion canceled.");
+            System.out.println(username + " is not in your friends list.");
         }
+    }
+
+    private void removeFriend(User loggedInUser, User friend) {
+        ArrayList<String> friends = loggedInUser.getFriends();
+        friends.remove(friend.getUsername());
+        numFriendDecrement(loggedInUser);
+        database.updateUserDetail(loggedInUser);
+
+        ArrayList<String> userFriends = friend.getFriends();
+        userFriends.remove(loggedInUser.getUsername());
+        numFriendDecrement(friend);
+        database.updateUserDetail(friend);
+        graph.removeEdge(loggedInUser, friend);
+    }
+
+    private void numFriendDecrement(User user) {
+        int numFriends = user.getNumberOfFriends();
+        user.setNumberOfFriends(numFriends - 1);
     }
 
     public void friendMenu() throws SQLException {
         boolean exit = false;
         while (!exit) {
-
-            System.out.println("==============================================\nFRIEND MENU:");
-            System.out.println("1. Show Friend List");
-            System.out.println("2. Show Pending Friend Requests");
-            System.out.println("3. Show Sent Friend Requests");
-            System.out.println("4. Show Friend Recommendation");
-            System.out.println("5. Back to Main Menu.");
-            System.out.print("Enter your choice: ");
+            System.out.println("==============================================");
+            System.out.println("                  FRIEND MENU                  ");
+            System.out.println("==============================================");
+            System.out.println("          1. Show Friend List");
+            System.out.println("          2. Show Pending Friend Requests");
+            System.out.println("          3. Show Sent Friend Requests");
+            System.out.println("          4. Show Friend Recommendation");
+            System.out.println("          5. Back to Main Menu.");
+            System.out.println("==============================================");
+            System.out.print("           Enter your choice: ");
             int choice = scanner.nextInt();
             scanner.nextLine();
             switch (choice) {
@@ -164,11 +133,14 @@ public class Friend {
                 case 4:
                     boolean back = false;
                     while (!back) {
-                        System.out.println("==============================================\nDISCOVER RECOMMENDATION:");
-                        System.out.println("1. By Degree of Friend");
-                        System.out.println("2. By Hobbies and Jobs");
-                        System.out.println("3. Back to Friend Menu");
-                        System.out.print("Enter your choice: ");
+                        System.out.println("==============================================");
+                        System.out.println("          DISCOVER RECOMMENDATION:");
+                        System.out.println("==============================================");
+                        System.out.println("          1. By Degree of Friend");
+                        System.out.println("          2. By Hobbies and Jobs");
+                        System.out.println("          3. Back to Friend Menu");
+                        System.out.println("==============================================");
+                        System.out.print("          Enter your choice: ");
                         int select = scanner.nextInt();
                         scanner.nextLine();
                         switch (select) {
@@ -201,100 +173,177 @@ public class Friend {
     }
 
     public void showFriendList() {
+        if (loggedInUser == null) {
+            System.out.println("No user logged in.");
+            return;
+        }
+
         System.out.println("Friend List:");
         ArrayList<String> friends = loggedInUser.getFriends();
         if (friends.isEmpty()) {
             System.out.println("You have no friends.");
             return;
         }
+
         for (int i = 0; i < friends.size(); i++) {
             String friend = friends.get(i);
             System.out.println((i + 1) + ". " + friend);
+
         }
     }
 
     public void showSentRequests() {
         System.out.println("Sent Friend Requests:");
-        ArrayList<String> sentRequest = loggedInUser.getSentRequests();
-        if (sentRequest.isEmpty()) {
-            System.out.println("No Sent Request.");
+        ArrayList<String> sentRequests = loggedInUser.getSentRequests();
+        if (sentRequests.isEmpty()) {
+            System.out.println("You have not sent any friend requests.");
             return;
         }
-        for (int i = 0; i < sentRequest.size(); i++) {
-            String sent = sentRequest.get(i);
-            System.out.println((i + 1) + ". " + sent);
+
+        for (int i = 0; i < sentRequests.size(); i++) {
+            String sentRequest = sentRequests.get(i);
+            System.out.println((i + 1) + ". " + sentRequest);
         }
     }
 
     public void handleFriendRequests() {
-        ArrayList<String> pending = loggedInUser.getReceivedRequests();
-        if (pending.isEmpty()) {
-            System.out.println("No pending friend requests.");
+        ArrayList<String> pendingRequests = loggedInUser.getReceivedRequests();
+        if (pendingRequests.isEmpty()) {
+            System.out.println("You have no pending friend requests.");
             return;
         }
 
         System.out.println("Received Friend Requests:");
-        for (int i = 0; i < pending.size(); i++) {
-            String friend = pending.get(i);
-            System.out.println((i + 1) + ". " + friend);
+        for (int i = 0; i < pendingRequests.size(); i++) {
+            String friendRequest = pendingRequests.get(i);
+            System.out.println((i + 1) + ". " + friendRequest);
         }
 
-        System.out.print("Enter the action that you want to take [1 to Accept, 2 to Reject]: ");
+        System.out.print("Enter the index of the friend request to process: ");
         Scanner scanner = new Scanner(System.in);
         int choice = scanner.nextInt();
 
-        if (choice < 1 || choice > 2) {
+        if (choice < 1 || choice > pendingRequests.size()) {
             System.out.println("Invalid choice. Request not processed.");
             return;
         }
 
-        System.out.print("Please choose the request to " + (choice == 1 ? "accept" : "reject") + ": ");
-        int requestIndex = scanner.nextInt();
+        String friendToProcess = pendingRequests.get(choice - 1);
+        processFriendRequest(friendToProcess);
+    }
 
-        if (requestIndex < 1 || requestIndex > pending.size()) {
+    private void processFriendRequest(String friendUsername) {
+        System.out.print("Enter the action that you want to take [1 to Accept, 2 to Reject]: ");
+        int choice = scanner.nextInt();
+
+        if (choice == 1) {
+            acceptFriendRequest(friendUsername);
+        } else if (choice == 2) {
+            rejectFriendRequest(friendUsername);
+        } else {
             System.out.println("Invalid choice. Request not processed.");
+        }
+    }
+
+    private void acceptFriendRequest(String friendUsername) {
+        User friend = database.getUser("Username", friendUsername);
+        if (friend == null) {
+            System.out.println("User not found.");
             return;
         }
 
-        String friendToProcess = pending.get(requestIndex - 1);
-        pendingFriendRequest(friendToProcess, String.valueOf(choice));
+        loggedInUser.getReceivedRequests().remove(friendUsername);
+        loggedInUser.getFriends().add(friendUsername);
+        numFriendIncrement(loggedInUser);
+
+        friend.getSentRequests().remove(loggedInUser.getUsername());
+        friend.getFriends().add(loggedInUser.getUsername());
+        numFriendIncrement(friend);
+        graph.addEdge(loggedInUser, friend);
+
+        database.updateUserDetail(loggedInUser);
+        database.updateUserDetail(friend);
+
+        System.out.println("Friend request from " + friendUsername + " is accepted. " + friendUsername + " is now your friend.");
+    }
+
+    private void rejectFriendRequest(String friendUsername) {
+        loggedInUser.getReceivedRequests().remove(friendUsername);
+        User friend = database.getUser("Username", friendUsername);
+        if (friend != null) {
+            friend.getSentRequests().remove(loggedInUser.getUsername());
+            database.updateUserDetail(friend);
+        }
+
+        database.updateUserDetail(loggedInUser);
+
+        System.out.println("Friend request from " + friendUsername + " is rejected.");
+    }
+
+    public void viewAccount(User loggedInUser) {
+        User user = database.getUser("Account_ID", loggedInUser.getAccountID());
+        if (user != null) {
+            System.out.println("==============================================");
+            System.out.println("             Displaying user profile           ");
+            System.out.println("==============================================");
+            System.out.println("Account ID:            " + user.getAccountID());
+            System.out.println("Name:                  " + user.getName());
+            System.out.println("Username:              " + user.getUsername());
+            System.out.println("Email Address:         " + user.getEmailAddress());
+            System.out.println("Contact Number:        " + user.getContactNumber());
+            System.out.println("Birthday:              " + user.getBirthday());
+            System.out.println("Age:                   " + user.getAge());
+            System.out.println("Address:               " + user.getAddress());
+            System.out.println("Gender:                " + user.getGender());
+            System.out.println("Relationship Status:   " + user.getRelationshipStatus());
+            int numberOfMutualFriends = countMutualFriends(user);
+            System.out.println("Number of Friends:     " + user.getNumberOfFriends() + " (" + numberOfMutualFriends + " Mutual Friend(s))");
+            System.out.println("Friends:               " + user.getFriends());
+            System.out.println("Hobbies:               " + user.getHobbies());
+            Stack<String> jobs = user.getJobs();
+            String currentJob = jobs.pop();
+            System.out.println("Current Job:           " + currentJob);
+            System.out.println("Previous Jobs History: " + jobs);
+            jobs.push(currentJob);
+            System.out.println("==============================================");
+        } else {
+            System.out.println("User not found.");
+        }
     }
 
     public void action(User user) throws SQLException {
-        Scanner sc = new Scanner(System.in);
         boolean exit2 = false;
+        viewAccount(user);
 
         while (!exit2) {
-            System.out.println("==============================================\nACTION: ");
-            System.out.println("1. View profile");
-            System.out.println("2. Add friend");
-            System.out.println("3. Remove friend");
-            System.out.println("4. Chat");
-            System.out.println("5. View Post");
-            System.out.println("6. Back");
-            System.out.print("Enter your choice: ");
-            int choice2 = sc.nextInt();
-            sc.nextLine();
+            System.out.println("                 ACTION                        ");
+            System.out.println("==============================================");
+            System.out.println("          1. Add friend");
+            System.out.println("          2. Remove friend");
+            System.out.println("          3. View Post");
+            System.out.println("          4. Chat");
+            System.out.println("          5. Back");
+            System.out.println("==============================================");
+            System.out.print("        Enter your choice: ");
+            int choice2 = scanner.nextInt();
+            scanner.nextLine();
+
             switch (choice2) {
                 case 1:
-                    UserAccess userAccess = new UserAccess();
-                    userAccess.viewAccount(user);
-                    break;
-                case 2:
                     sendFriendRequest(user);
                     break;
-                case 3:
+                case 2:
                     deleteFriend(user);
+                    break;
+                case 3:
+                    PostManager post = new PostManager(loggedInUser);
+                    post.viewPost(user);
                     break;
                 case 4:
                     Chat chat = new Chat(loggedInUser);
                     chat.startChatting(user);
                     break;
                 case 5:
-                    PostManager post = new PostManager(loggedInUser);
-                    post.viewPost(user);
-                    break;
-                case 6:
                     exit2 = true;
                     System.out.println("Loading Back...");
                     break;
@@ -305,7 +354,6 @@ public class Friend {
         }
     }
 
-    // follow friend degree
     public void degreeRecommend() throws SQLException {
         List<User> friend = graph.getRecommendedConnections(loggedInUser);
 
@@ -315,7 +363,16 @@ public class Friend {
             System.out.println("Friend Recommendations:");
             int friendSize = Math.min(10, friend.size());
             for (int i = 0; i < friendSize; i++) {
-                System.out.println((i + 1) + ". " + friend.get(i).getUsername());
+                User recommendedFriend = friend.get(i);
+                int degree = graph.getShortestDistance(loggedInUser, recommendedFriend);
+                Vertex loggedInUserVertex = graph.findVertex(loggedInUser);
+                Vertex recommendedFriendVertex = graph.findVertex(recommendedFriend);
+                int mutualConnections = graph.countMutualConnections(loggedInUserVertex, recommendedFriendVertex);
+
+                System.out.println((i + 1) + ". " + recommendedFriend.getUsername()
+                        + " (2nd Degree: " + (degree == 2 ? "Yes" : "No")
+                        + ", 3rd Degree: " + (degree == 3 ? "Yes" : "No")
+                        + ", Mutual Connections: " + mutualConnections + ")");
             }
 
             int friendChoice = 0;
@@ -339,7 +396,7 @@ public class Friend {
             action(selectedFriend);
         }
     }
-    
+
     // I change using comparator instead of bubble sort
     public void publicRecommend() throws SQLException {
         List<User> users = database.loadUsers();
@@ -423,8 +480,15 @@ public class Friend {
     }
 
     private int countMutualFriends(User user) {
-        List<String> mutualFriends = graph.showFirstDegreeConnections(user);
-        mutualFriends.retainAll(loggedInUser.getFriends());
-        return mutualFriends.size();
+        Vertex loggedInUserVertex = graph.findVertex(user);
+        int count = 0;
+
+        if (loggedInUserVertex != null) {
+            for (Vertex neighbour : loggedInUserVertex.getNeighbours()) {
+                count += graph.countMutualConnections(loggedInUserVertex, neighbour);
+            }
+        }
+
+        return count;
     }
 }

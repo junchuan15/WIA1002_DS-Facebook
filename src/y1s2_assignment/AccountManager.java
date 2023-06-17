@@ -17,7 +17,7 @@ public class AccountManager {
     private DatabaseSQL databaseSQL = new DatabaseSQL();
 
     public void UserRegister() {
-        System.out.println("==============================================\nSIGN UP now !");
+        System.out.println("==============================================\nSIGN UP NOW !");
         String Username = validate.validateUsername();
         String EmailAddress = validate.validateEmail();
         String ContactNumber = validate.validatePhoneNo();
@@ -37,7 +37,7 @@ public class AccountManager {
     }
 
     public User userLogin() {
-        System.out.println("==============================================\nLOGIN now! ");
+        System.out.println("==============================================\nLOGIN NOW! ");
         boolean isLoggedIn = false;
         String loginId;
         while (!isLoggedIn) {
@@ -78,7 +78,6 @@ public class AccountManager {
                         if (loggedInUser.getName() == null) {
                             userSetup(loggedInUser);
                         }
-                        System.out.println("Login Successfully!\n");
                         System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
                         System.out.println("You are logged in as a regular user.");
                         return loggedInUser;

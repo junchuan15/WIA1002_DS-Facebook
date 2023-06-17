@@ -269,12 +269,12 @@ public class DatabaseSQL {
                 queryParams.add(user.getRelationshipStatus());
             }
 
-            if (user.getHobbies() != null) {
+            if (user.getHobbies() != null && !user.getHobbies().isEmpty()) {
                 queryBuilder.append("Hobbies=?, ");
                 queryParams.add(joinWithComma(user.getHobbies()));
             }
 
-            if (user.getJobs() != null) {
+            if (user.getJobs() != null && !user.getJobs().isEmpty()) {
                 queryBuilder.append("Jobs=?, ");
                 queryParams.add(joinWithComma(user.getJobs()));
             }
@@ -284,23 +284,22 @@ public class DatabaseSQL {
                 queryParams.add(user.getNumberOfFriends());
             }
 
-            if (user.getFriends() != null) {
+            if (user.getFriends() != null && !user.getFriends().isEmpty()) {
                 queryBuilder.append("Friends=?, ");
                 queryParams.add(joinWithComma(user.getFriends()));
             }
 
-            if (user.getSentRequests() != null) {
+            if (user.getSentRequests() != null && !user.getSentRequests().isEmpty()) {
                 queryBuilder.append("SentRequests=?, ");
                 queryParams.add(joinWithComma(user.getSentRequests()));
             }
 
-            if (user.getReceivedRequests() != null) {
+            if (user.getReceivedRequests() != null && !user.getReceivedRequests().isEmpty()) {
                 queryBuilder.append("ReceivedRequests=?, ");
                 queryParams.add(joinWithComma(user.getReceivedRequests()));
             }
 
             queryBuilder.setLength(queryBuilder.length() - 2);
-
             queryBuilder.append(" WHERE Account_ID=?");
             queryParams.add(user.getAccountID());
 
@@ -322,23 +321,26 @@ public class DatabaseSQL {
 
     private String joinWithComma(List<String> list) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < list.size(); i++) {
-            String element = list.get(i);
-            if (element != null) {
-                sb.append(element);
-                if (i < list.size() - 1) {
+        boolean isFirst = true;
+        for (String element : list) {
+            if (element != null && !element.isEmpty()) {
+                if (isFirst) {
+                    isFirst = false;
+                } else {
                     sb.append(",");
                 }
+                sb.append(element);
             }
         }
         return sb.toString();
     }
 
-    public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList) {
+    public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList, User user) {
         try {
             Connection con = DriverManager.getConnection(url, username, password);
             Statement statement = con.createStatement();
-            ResultSet rs = statement.executeQuery("SELECT * FROM usersdata WHERE Role <> 'Admin'");
+            String query = "SELECT * FROM usersdata WHERE Account_ID <> '" + user.getAccountID() + "'";
+            ResultSet rs = statement.executeQuery(query);
 
             while (rs.next()) {
                 String accountID = rs.getString("Account_ID");
@@ -457,13 +459,19 @@ public class DatabaseSQL {
     public void deleteUserSQL(User user) {
         try {
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            String deleteQuery = "DELETE FROM usersdata WHERE Account_ID = ?";
-            try ( PreparedStatement statement = connection.prepareStatement(deleteQuery)) {
-                statement.setString(1, user.getAccountID());
-                int rowsAffected = statement.executeUpdate();
+            String deleteUserDataQuery = "DELETE FROM usersdata WHERE Account_ID = ?";
+            try ( PreparedStatement userDataStatement = connection.prepareStatement(deleteUserDataQuery)) {
+                userDataStatement.setString(1, user.getAccountID());
+                int userDataRowsAffected = userDataStatement.executeUpdate();
+            }
+
+            String deleteUserPostsQuery = "DELETE FROM userspost WHERE Account_ID = ?";
+            try ( PreparedStatement userPostsStatement = connection.prepareStatement(deleteUserPostsQuery)) {
+                userPostsStatement.setString(1, user.getAccountID());
+                int userPostsRowsAffected = userPostsStatement.executeUpdate();
             }
         } catch (SQLException e) {
-            System.out.println("An error occurred while deleting the user from the database: " + e.getMessage());
+            System.out.println("An error occurred while deleting the user and posts from the database: " + e.getMessage());
         }
     }
 

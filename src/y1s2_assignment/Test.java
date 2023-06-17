@@ -17,12 +17,23 @@ public class Test {
 
         while (true) {
             if (loggedInUser == null) {
-                System.out.println("Welcome to TheFacebook!");
-                System.out.println("==============================================\nMAIN MENU");
-                System.out.println("1. Register");
-                System.out.println("2. Login");
-                System.out.println("3. Exit");
-                System.out.print("Enter your choice: ");
+        System.out.println("          █████╗    █████╗            ");
+        System.out.println("          ██╔════╝      ██╔═██╗           ");
+        System.out.println("          █████╗     █████╔╝          ");
+        System.out.println("          ██╔════╝     ██╔══██╗                ");
+        System.out.println("          ██║        ██████╔╝               ");
+        System.out.println("          ╚═╝            ╚═════╝              ");
+        System.out.println("==============================================");
+        System.out.println("          Welcome to TheFacebook!         ");
+        System.out.println("==============================================");
+        System.out.println("                 MAIN MENU                       ");
+        System.out.println("==============================================");
+        System.out.println("                 1. Register");
+        System.out.println("                 2. Login");
+        System.out.println("                 3. Exit");
+        System.out.println("==============================================");
+
+                System.out.print("     Enter your choice: ");
                 String choiceStr = sc.nextLine();
 
                 if (choiceStr.matches("\\d+")) {
@@ -35,7 +46,12 @@ public class Test {
                         case 2:
                             loggedInUser = accountManager.userLogin();
                             if (loggedInUser != null) {
-                                System.out.println("Login successful!");
+                                if (loggedInUser.isBanned()) {
+                                    System.out.println("You are currently banned. Your ban will be lifted on: " + loggedInUser.getBanEndTime());
+                                    loggedInUser = null;
+                                } else {
+                                    System.out.println("Login successful!");
+                                }
                             } else {
                                 System.out.println("Invalid username or password. Please try again.");
                             }
@@ -44,7 +60,7 @@ public class Test {
                             System.out.println("Exiting the program...");
                             return; // End the program
                         default:
-                            System.out.println("Invalid choice!");
+                            System.out.println("            Invalid choice!");
                             break;
                     }
                 } else {
@@ -55,12 +71,12 @@ public class Test {
                     AdminAccess adminAccess = new AdminAccess(loggedInUser);
                     adminAccess.adminMenu();
                     loggedInUser = null;
-                    continue; 
+                    continue;
                 } else {
                     UserAccess userAccess = new UserAccess(loggedInUser);
                     userAccess.userMenu();
                     loggedInUser = null;
-                    continue; 
+                    continue;
                 }
             }
         }

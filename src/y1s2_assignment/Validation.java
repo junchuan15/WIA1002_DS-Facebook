@@ -347,6 +347,10 @@ public class Validation {
         return matcher.matches();
     }
 
+    public boolean validateCurrentPassword(String currentPasswordInput, String encryptedPassword) {
+        return validatePassword(currentPasswordInput, encryptedPassword);
+    }
+
     public String encryptPassword(String password) {
         try {
             SecureRandom random = new SecureRandom();
