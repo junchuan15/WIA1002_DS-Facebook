@@ -4,6 +4,7 @@
  */
 package y1s2_assignment;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -15,28 +16,32 @@ public class AccountManager {
     private Scanner sc = new Scanner(System.in);
     private Validation validate = new Validation();
     private DatabaseSQL databaseSQL = new DatabaseSQL();
+    private Encryption encrypt = new Encryption();
 
-    public void UserRegister() {
+    public void UserRegister() throws SQLException {
         System.out.println("==============================================\nSIGN UP NOW !");
         String Username = validate.validateUsername();
         String EmailAddress = validate.validateEmail();
         String ContactNumber = validate.validatePhoneNo();
         String Password = validate.validatePassword();
         User registeredUser = new User.Builder(Username, EmailAddress, ContactNumber, Password).build();
+
         if (validate.isAdmin(registeredUser)) {
             registeredUser.setRole("Admin");
             registeredUser.setAccountID(databaseSQL.generateAccountID(registeredUser.getRole()));
-
         } else {
             registeredUser.setRole("User");
             registeredUser.setAccountID(databaseSQL.generateAccountID(registeredUser.getRole()));
         }
 
+        String encryptedPassword = encrypt.encryption(registeredUser.getAccountID(), Password);
+        registeredUser.setPassword(encryptedPassword);
+
         databaseSQL.registerUser(registeredUser);
         System.out.print("Register Successfully\n\n");
     }
 
-    public User userLogin() {
+    public User userLogin() throws SQLException {
         System.out.println("==============================================\nLOGIN NOW! ");
         boolean isLoggedIn = false;
         String loginId;
@@ -47,7 +52,7 @@ public class AccountManager {
             if (loggedInUser != null) {
                 System.out.print("Password: ");
                 String loginPw = sc.nextLine();
-                if (validate.validatePassword(loginPw, loggedInUser.getPassword())) {
+                if (encrypt.validatePassword(loggedInUser.getAccountID(),loginPw, loggedInUser.getPassword())) {
                     if (validate.isAdmin(loggedInUser)) {
                         System.out.println("You are logged in as an admin.");
                         int attempts = 0;
@@ -121,8 +126,8 @@ public class AccountManager {
                 .setNumberOfFriends(0)
                 .setHobbies(hobbies)
                 .setJobs(jobs)
-                .setFriends(new ArrayList<>()) 
-                .setSentRequests(new ArrayList<>()) 
+                .setFriends(new ArrayList<>())
+                .setSentRequests(new ArrayList<>())
                 .setReceivedRequests(new ArrayList<>())
                 .build();
 

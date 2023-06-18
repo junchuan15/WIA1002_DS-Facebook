@@ -21,6 +21,7 @@ public class AdminAccess extends UserAccess {
     private ArrayList<User> users;
     private ArrayList<Post> posts;
     private Post post;
+    private PostManager pm = new PostManager();
     Scanner sc = new Scanner(System.in);
 
     public AdminAccess(User loggedInUser) {
@@ -207,6 +208,8 @@ public class AdminAccess extends UserAccess {
 
                 if (post.getMediaPath() != null && !post.getMediaPath().isEmpty()) {
                     System.out.println("Media: " + post.getMediaPath());
+                    pm.viewMedia(post.getMediaPath() );
+                    
                 }
                 System.out.println("------------------------");
                 System.out.print("Are you sure you want to delete this post? (Y/N): ");
@@ -361,7 +364,6 @@ public class AdminAccess extends UserAccess {
 
     public void viewUserReports() {
         ArrayList<String> reports = getReport(posts);
-        PostManager pm = new PostManager();
         if (reports.isEmpty()) {
             System.out.println("No user reports found.");
         } else {

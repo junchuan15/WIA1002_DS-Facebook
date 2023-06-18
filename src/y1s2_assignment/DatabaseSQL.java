@@ -738,4 +738,41 @@ public class DatabaseSQL {
 
         return posts;
     }
+
+    public void insertUserSalt(String accountID, String salt) throws SQLException {
+        try {
+            connectAndFetchData();
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            PreparedStatement ps = con.prepareStatement("INSERT INTO userspassword (Account_ID, Salt) VALUES (?, ?)");
+            ps.setString(1, accountID);
+            ps.setString(2, salt);
+            ps.executeUpdate();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String retrieveUserSalt(String accountID) throws SQLException {
+        String salt = null;
+
+        try {
+            connectAndFetchData();
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            PreparedStatement ps = con.prepareStatement("SELECT Salt FROM userspassword WHERE Account_ID = ?");
+            ps.setString(1, accountID);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                salt = rs.getString("Salt");
+            }
+
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return salt;
+    }
+
 }

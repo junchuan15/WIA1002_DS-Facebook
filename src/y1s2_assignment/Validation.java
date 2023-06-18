@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.YearMonth;
@@ -27,6 +28,7 @@ import java.util.regex.Pattern;
 public class Validation {
 
     private DatabaseSQL database = new DatabaseSQL();
+    private Encryption encrypt = new Encryption();
     Scanner sc = new Scanner(System.in);
 
     public String validateUsername() {
@@ -99,7 +101,7 @@ public class Validation {
         return ContactNumberInput;
     }
 
-    public String validatePassword() {
+    public String validatePassword() throws SQLException {
         String PasswordInput = "";
         boolean isValidPassword = false;
         String regex_pw = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&+*=!?.~_\\|{}\\[\\]();:,<>/\\\\])[ -~]{8,}$";
@@ -132,7 +134,7 @@ public class Validation {
                     System.out.print("Retype Password: ");
                     retypePassword = sc.nextLine();
                 }
-                PasswordInput = encryptPassword(PasswordInput);
+                
             }
         }
         return PasswordInput;
@@ -346,7 +348,7 @@ public class Validation {
         Matcher matcher = pattern.matcher(string);
         return matcher.matches();
     }
-
+/*
     public boolean validateCurrentPassword(String currentPasswordInput, String encryptedPassword) {
         return validatePassword(currentPasswordInput, encryptedPassword);
     }
@@ -416,5 +418,5 @@ public class Validation {
             return false;
         }
     }
-
+*/
 }

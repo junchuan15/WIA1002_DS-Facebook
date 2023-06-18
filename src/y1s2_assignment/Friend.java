@@ -172,7 +172,7 @@ public class Friend {
         }
     }
 
-    public void showFriendList() {
+    public void showFriendList() throws SQLException {
         if (loggedInUser == null) {
             System.out.println("No user logged in.");
             return;
@@ -190,9 +190,26 @@ public class Friend {
             System.out.println((i + 1) + ". " + friend);
 
         }
+
+        System.out.println("Enter the index of the user you want to view:");
+        int selectedIndex = scanner.nextInt();
+        System.out.println("==============================================");
+        if (selectedIndex < 1 || selectedIndex > friends.size()) {
+            System.out.println("Invalid index. Please try again.");
+            return;
+        }
+
+        String selectedUserName = friends.get(selectedIndex - 1);
+        User selectedUser = database.getUser("UserName", selectedUserName);
+        if (selectedUser == null) {
+            System.out.println("User not found. Please try again.");
+            return;
+        }
+
+        action(selectedUser);
     }
 
-    public void showSentRequests() {
+    public void showSentRequests() throws SQLException {
         System.out.println("Sent Friend Requests:");
         ArrayList<String> sentRequests = loggedInUser.getSentRequests();
         if (sentRequests.isEmpty()) {
@@ -204,6 +221,22 @@ public class Friend {
             String sentRequest = sentRequests.get(i);
             System.out.println((i + 1) + ". " + sentRequest);
         }
+
+        System.out.print("Enter the index of the user you want to view: ");
+        int selectedIndex = scanner.nextInt();
+        System.out.println("==============================================");
+        if (selectedIndex < 1 || selectedIndex > sentRequests.size()) {
+            System.out.println("Invalid index. Please try again.");
+            return;
+        }
+
+        String selectedUserName = sentRequests.get(selectedIndex - 1);
+        User selectedUser = database.getUser("UserName", selectedUserName);
+        if (selectedUser == null) {
+            System.out.println("User not found. Please try again.");
+            return;
+        }
+        action(selectedUser);
     }
 
     public void handleFriendRequests() {
@@ -305,7 +338,6 @@ public class Friend {
             System.out.println("Current Job:           " + currentJob);
             System.out.println("Previous Jobs History: " + jobs);
             jobs.push(currentJob);
-            System.out.println("==============================================");
         } else {
             System.out.println("User not found.");
         }
@@ -316,6 +348,7 @@ public class Friend {
         viewAccount(user);
 
         while (!exit2) {
+            System.out.println("==============================================");
             System.out.println("                 ACTION                        ");
             System.out.println("==============================================");
             System.out.println("          1. Add friend");
@@ -399,10 +432,9 @@ public class Friend {
 
     // I change using comparator instead of bubble sort
     public void publicRecommend() throws SQLException {
-        List<User> users = database.loadUsers();
+        List<User> users = new ArrayList<>(database.loadUsers());
         users.remove(loggedInUser);
-        users.removeAll(graph.showFirstDegreeConnections(loggedInUser));
-
+        users.removeAll(loggedInUser.getFriends());
         users.sort(Comparator.comparingInt(this::calculateScore).reversed());
 
         if (users.isEmpty()) {

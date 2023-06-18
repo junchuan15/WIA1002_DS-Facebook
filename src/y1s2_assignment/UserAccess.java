@@ -16,6 +16,7 @@ public class UserAccess {
 
     protected User loggedInUser;
     private DatabaseSQL database;
+    private Encryption encrypt = new Encryption();
     Scanner sc = new Scanner(System.in);
 
     public UserAccess(User loggedInUser) {
@@ -42,7 +43,7 @@ public class UserAccess {
             System.out.println("          5. Post");
             System.out.println("          6. Logout");
             System.out.println("==============================================");
-            System.out.print("           Enter your choice: ");
+            System.out.print("Enter your choice: ");
             String choiceStr = sc.nextLine();
 
             if (choiceStr.matches("\\d+")) {
@@ -78,7 +79,7 @@ public class UserAccess {
         }
     }
 
-    public void EditProfile() {
+    public void EditProfile() throws SQLException {
         Validation validate = new Validation();
         boolean isDoneEdit = false;
 
@@ -127,17 +128,18 @@ public class UserAccess {
                         while (!passwordChanged && !incorrectPassword) {
                             System.out.print("Enter your current password (Press 'b' to go back): ");
                             String currentPasswordInput = sc.nextLine();
-                            if (currentPasswordInput.equalsIgnoreCase("b")){
+                            if (currentPasswordInput.equalsIgnoreCase("b")) {
                                 break;
                             }
                             String encryptedPassword = loggedInUser.getPassword();
-                            if (!validate.validatePassword(currentPasswordInput, encryptedPassword)) {
+                            if (!encrypt.checkPassword(loggedInUser.getAccountID(), currentPasswordInput, encryptedPassword)) {
                                 System.out.println("Incorrect current password. Password change failed.");
                                 incorrectPassword = true;
                             } else {
                                 System.out.print("New ");
                                 String newPassword = validate.validatePassword();
-                                loggedInUser.setPassword(newPassword); 
+                                String encryptedPw = encrypt.encryption(loggedInUser.getAccountID(), newPassword);
+                                loggedInUser.setPassword(encryptedPw);
                                 System.out.println("Password reset successful.");
                                 passwordChanged = true;
                             }
@@ -247,7 +249,7 @@ public class UserAccess {
         }
     }
 
-    public void displayProfile() {
+    public void displayProfile() throws SQLException {
         boolean back = false;
         boolean edit = false;
         while (!back) {

@@ -16,6 +16,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 /**
@@ -146,16 +148,21 @@ public class PostManager {
     }
 
     // Menu in user interface
-    public void PostMenu() throws SQLException {
+   public void PostMenu() throws SQLException {
         boolean quit = false;
         while (!quit) {
-            System.out.println("==============================================\nPOST MENU");
-            System.out.println("1. Create Post");
-            System.out.println("2. View My Posts");
-            System.out.println("3. View History");
-            System.out.println("4. Back to Main Menu");
+            System.out.println("==============================================");
+            System.out.println("                 POST MENU                    ");
+            System.out.println("==============================================");
+            System.out.println("             1. Create Post");
+            System.out.println("             2. View My Posts");
+            System.out.println("             3. View History");
+            System.out.println("             4. Explore Random Feed");
+            System.out.println("             5. Back to Main Menu");
+            System.out.println("==============================================");
             System.out.print("Enter your choice: ");
             int select = sc.nextInt();
+            System.out.println("==============================================");
             sc.nextLine();
 
             switch (select) {
@@ -174,6 +181,9 @@ public class PostManager {
                     traceBack();
                     break;
                 case 4:
+                    exploreFeed();
+                    break;
+                case 5:
                     quit = true;
                     break;
                 default:
@@ -297,6 +307,15 @@ public class PostManager {
 
             while (!exit) {
                 Post currentPost = posts.get(currentIndex);
+                if (currentPost.getStatusAsString().equalsIgnoreCase("PRIVATE") && !user.getFriends().contains(loggedinUser)) {
+                    System.out.println("This is a private post. You are not authorized to view it.");
+                    currentIndex--;
+                    if (currentIndex < 0) {
+                        System.out.println("End of posts.");
+                        exit = true;
+                    }
+                    continue;
+                }
                 printPost(currentPost);
                 if (currentPost.getMediaPath() != null && !currentPost.getMediaPath().isEmpty()) {
                     viewMedia(currentPost.getMediaPath());
@@ -382,9 +401,9 @@ public class PostManager {
 
     public void likePost(Post post, User user) {
         ArrayList<String> likeList = database.getList(post, "LikeList");
-        if (!likeList.contains(user.getUsername())) {
+        if (!likeList.contains(loggedinUser.getUsername())) {
             post.setLikes(post.getLikes() + 1);
-            likeList.add(user.getUsername());
+            likeList.add(loggedinUser.getUsername());
             database.updatePost(post, "LikeList", likeList);
             database.updatePost(post, "Num_Likes", post.getLikes());
             System.out.println("Post liked successfully.");
@@ -396,9 +415,9 @@ public class PostManager {
 
     public void unlikePost(Post post, User user) {
         ArrayList<String> likeList = database.getList(post, "LikeList");
-        if (likeList.contains(user.getUsername())) {
+        if (likeList.contains(loggedinUser.getUsername())) {
             post.setLikes(post.getLikes() - 1);
-            likeList.remove(user.getUsername());
+            likeList.remove(loggedinUser);
             database.updatePost(post, "LikeList", likeList);
             database.updatePost(post, "Num_Likes", post.getLikes());
             System.out.println("Post unliked successfully.");
@@ -418,7 +437,7 @@ public class PostManager {
             System.out.println("Invalid input. Please enter a valid comment.");
         }
         post.setComments(post.getComments() + 1);
-        String commentString = user.getUsername() + ":" + comment;
+        String commentString = loggedinUser + ":" + comment;
         ArrayList<String> commentList = database.getList(post, "CommentList");
         commentList.add(commentString);
         performAction("PostID:" + String.valueOf(post.getPostID()) + " Comment '" + comment + "' on Post by " + user.getUsername());
@@ -436,7 +455,7 @@ public class PostManager {
                 System.out.println("Reason cannot be empty. Please try again.");
             }
         }
-        String reportString = user.getUsername() + ":" + reason;
+        String reportString = loggedinUser.getUsername() + ":" + reason;
         ArrayList<String> reportList = database.getList(post, "Report");
         reportList.add(reportString);
         performAction("PostID:" + String.valueOf(post.getPostID()) + " Report '" + reason + "' Post by " + user.getUsername());
@@ -484,6 +503,26 @@ public class PostManager {
 
     }
 
+    public void exploreFeed() throws SQLException {
+        List<Post> posts = database.getAllPosts();
+        List<Post> filteredPosts = new ArrayList<>();
+
+        for (Post post : posts) {
+            if (post.getAccountID() != loggedinUser.getAccountID() || post.getStatusAsString() != "PRIVATE") {
+                filteredPosts.add(post);
+            }
+        }
+
+        if (filteredPosts.isEmpty()) {
+            System.out.println("No posts available in the explore feed.");
+        } else {
+            int randomIndex = new Random().nextInt(filteredPosts.size());
+            Post currentPost = filteredPosts.get(randomIndex);
+            User postOwner = database.getUser("Account_ID", currentPost.getAccountID());
+            viewPost(postOwner);
+        }
+    }
+
     public void performAction(String action) {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -504,20 +543,20 @@ public class PostManager {
             return;
         }
 
-        for (int i = 0; i < loggedinUser.getHistory().size(); i++) {
-            System.out.println((i + 1) + ". " + loggedinUser.getHistory().get(i));
-        }
+        int lastIndex = loggedinUser.getHistory().size() - 1;
+        String lastAction = loggedinUser.getHistory().get(lastIndex);
+        System.out.println("1. " + lastAction);
 
-        System.out.print("Enter the index of the action you want to trace back: ");
+        System.out.print("Enter 1 to trace back the last action: ");
         int choice = sc.nextInt();
         sc.nextLine();
 
-        if (choice < 1 || choice > loggedinUser.getHistory().size()) {
+        if (choice != 1) {
             System.out.println("Invalid choice.");
             return;
         }
 
-        String action = loggedinUser.getHistory().get(choice - 1);
+        String action = lastAction;
         String[] parts = action.split(" - ");
         if (parts.length < 2) {
             System.out.println("Invalid action format.");
