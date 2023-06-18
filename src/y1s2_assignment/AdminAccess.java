@@ -38,15 +38,15 @@ public class AdminAccess extends UserAccess {
             System.out.println("==============================================");
             System.out.println("                 ADMIN MENU                    ");
             System.out.println("==============================================");
-            System.out.println("          1. Admin Control");
-            System.out.println("          2. Display Profile");
-            System.out.println("          3. Search User");
-            System.out.println("          4. Manage Friends");
-            System.out.println("          5. Messenger");
-            System.out.println("          6. Post");
-            System.out.println("          7. Logout");
+            System.out.println("             1. Admin Control");
+            System.out.println("             2. Display Profile");
+            System.out.println("             3. Search User");
+            System.out.println("             4. Manage Friends");
+            System.out.println("             5. Messenger");
+            System.out.println("             6. Post");
+            System.out.println("             7. Logout");
             System.out.println("==============================================");
-            System.out.print("               Enter your choice: ");
+            System.out.print("Enter your choice: ");
             String choiceStr = sc.nextLine();
 
             if (choiceStr.matches("\\d+")) {
@@ -100,7 +100,7 @@ public class AdminAccess extends UserAccess {
             System.out.println("          6. View User Reports");
             System.out.println("          7. Back to Admin Menu");
             System.out.println("==============================================");
-            System.out.print("               Enter your choice: ");
+            System.out.print("Enter your choice: ");
             String choiceStr = sc.nextLine();
 
             if (choiceStr.matches("\\d+")) {

@@ -5,6 +5,7 @@
 package y1s2_assignment;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -46,13 +47,13 @@ public class AccountManager {
         boolean isLoggedIn = false;
         String loginId;
         while (!isLoggedIn) {
-            System.out.print("Email Address or Phone Number: ");
+            System.out.print("Email Address/Phone Number: ");
             loginId = sc.nextLine();
             User loggedInUser = databaseSQL.getUserLogin(loginId);
             if (loggedInUser != null) {
                 System.out.print("Password: ");
                 String loginPw = sc.nextLine();
-                if (encrypt.validatePassword(loggedInUser.getAccountID(),loginPw, loggedInUser.getPassword())) {
+                if (encrypt.validatePassword(loggedInUser.getAccountID(), loginPw, loggedInUser.getPassword())) {
                     if (validate.isAdmin(loggedInUser)) {
                         System.out.println("You are logged in as an admin.");
                         int attempts = 0;
@@ -74,11 +75,16 @@ public class AccountManager {
 
                             } else {
                                 attempts++;
-                                System.out.println("Invalid key password. Attempts left: " + (3 - attempts));
+                                System.out.println("Invalid secret code. Attempts left: " + (3 - attempts));
                             }
                         }
 
-                        System.out.println("Key password authentication failed. Returning to login screen.");
+                        if (!isSecretCode) {
+                            System.out.println("Secret code authentication failed. Account will be banned for 1 day.");
+                            loggedInUser.setBanned(true);
+                            loggedInUser.setBanEndTime(LocalDateTime.now().plusHours(24));
+                            databaseSQL.updateUserDetail(loggedInUser);
+                        }
                     } else {
                         if (loggedInUser.getName() == null) {
                             userSetup(loggedInUser);

@@ -117,7 +117,7 @@ public class Friend {
             System.out.println("          4. Show Friend Recommendation");
             System.out.println("          5. Back to Main Menu.");
             System.out.println("==============================================");
-            System.out.print("           Enter your choice: ");
+            System.out.print("Enter your choice: ");
             int choice = scanner.nextInt();
             scanner.nextLine();
             switch (choice) {
@@ -140,7 +140,7 @@ public class Friend {
                         System.out.println("          2. By Hobbies and Jobs");
                         System.out.println("          3. Back to Friend Menu");
                         System.out.println("==============================================");
-                        System.out.print("          Enter your choice: ");
+                        System.out.print("Enter your choice: ");
                         int select = scanner.nextInt();
                         scanner.nextLine();
                         switch (select) {
@@ -178,13 +178,13 @@ public class Friend {
             return;
         }
 
-        System.out.println("Friend List:");
         ArrayList<String> friends = loggedInUser.getFriends();
         if (friends.isEmpty()) {
             System.out.println("You have no friends.");
             return;
         }
 
+        System.out.println("Friend List:");
         for (int i = 0; i < friends.size(); i++) {
             String friend = friends.get(i);
             System.out.println((i + 1) + ". " + friend);
@@ -210,12 +210,13 @@ public class Friend {
     }
 
     public void showSentRequests() throws SQLException {
-        System.out.println("Sent Friend Requests:");
+
         ArrayList<String> sentRequests = loggedInUser.getSentRequests();
         if (sentRequests.isEmpty()) {
             System.out.println("You have not sent any friend requests.");
             return;
         }
+        System.out.println("Sent Friend Requests:");
 
         for (int i = 0; i < sentRequests.size(); i++) {
             String sentRequest = sentRequests.get(i);
@@ -357,7 +358,7 @@ public class Friend {
             System.out.println("          4. Chat");
             System.out.println("          5. Back");
             System.out.println("==============================================");
-            System.out.print("        Enter your choice: ");
+            System.out.print("Enter your choice: ");
             int choice2 = scanner.nextInt();
             scanner.nextLine();
 
@@ -433,7 +434,7 @@ public class Friend {
     // I change using comparator instead of bubble sort
     public void publicRecommend() throws SQLException {
         List<User> users = new ArrayList<>(database.loadUsers());
-        users.remove(loggedInUser);
+        users.removeIf(user -> user.getAccountID().equals(loggedInUser.getAccountID())); 
         users.removeAll(loggedInUser.getFriends());
         users.sort(Comparator.comparingInt(this::calculateScore).reversed());
 

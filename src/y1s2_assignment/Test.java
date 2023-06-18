@@ -33,7 +33,7 @@ public class Test {
         System.out.println("                 3. Exit");
         System.out.println("==============================================");
 
-                System.out.print("     Enter your choice: ");
+                System.out.print("Enter your choice: ");
                 String choiceStr = sc.nextLine();
 
                 if (choiceStr.matches("\\d+")) {
@@ -58,9 +58,9 @@ public class Test {
                             break;
                         case 3:
                             System.out.println("Exiting the program...");
-                            return; // End the program
+                            return; 
                         default:
-                            System.out.println("            Invalid choice!");
+                            System.out.println("Invalid choice!");
                             break;
                     }
                 } else {

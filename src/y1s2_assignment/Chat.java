@@ -228,21 +228,42 @@ public class Chat {
         ArrayList<String> friends = loggedInUser.getFriends();
         ArrayList<User> friendObjects = new ArrayList<>();
 
+        ArrayList<LocalDateTime> latestChatTimestamps = new ArrayList<>();
+        ArrayList<String> lastMessages = new ArrayList<>();
+
         for (String friend : friends) {
             User friendObj = database.getUser("UserName", friend);
             if (friendObj != null) {
                 friendObjects.add(friendObj);
+                loadChatHistory(friendObj);
+
+                // Get the latest chat timestamp and last message for each friend
+                if (!chatEntries.isEmpty()) {
+                    ChatEntry lastChatEntry = chatEntries.get(chatEntries.size() - 1);
+                    latestChatTimestamps.add(lastChatEntry.getTimestamp());
+                    lastMessages.add(lastChatEntry.getMessage());
+                } else {
+                    // If no chat history, assume default values
+                    latestChatTimestamps.add(LocalDateTime.MIN);
+                    lastMessages.add("");
+                }
             }
         }
 
+        // Sort the friendObjects list based on the latest chat timestamp in descending order
+        friendObjects.sort(Comparator.comparing(friend -> latestChatTimestamps.get(friendObjects.indexOf(friend))).reversed());
+
         if (friendObjects.isEmpty()) {
             System.out.println("You have no friends to chat with.");
-            return; // Return to the main menu
+            return; 
         }
 
         int choice = 1;
         for (User friend : friendObjects) {
-            System.out.println(choice + ". " + friend.getUsername());
+            LocalDateTime latestTimestamp = latestChatTimestamps.get(friendObjects.indexOf(friend));
+            String lastMessage = lastMessages.get(friendObjects.indexOf(friend));
+
+            System.out.println(choice + ". " + friend.getUsername() + " (Last Message: " + lastMessage + " at " + latestTimestamp + ")");
             choice++;
         }
 
@@ -267,42 +288,6 @@ public class Chat {
                 System.out.println("Invalid input. Please enter a valid choice.");
             }
         }
-    }
-
-    // No use yet
-    private LocalDateTime getLatestChatTimestamp(User friend) {
-        if (friend == null) {
-            System.out.println("Invalid friend.");
-            return null;
-        }
-
-        String fileName = generateChatHistoryFileName(friend);
-        if (fileName == null) {
-            System.out.println("Invalid file name.");
-            return null;
-        }
-
-        try ( BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
-            String line;
-            LocalDateTime latestTimestamp = null;
-            while ((line = reader.readLine()) != null) {
-                try {
-                    ChatEntry entry = parseChatEntry(line);
-                    LocalDateTime timestamp = entry.getTimestamp();
-                    if (latestTimestamp == null || timestamp.isAfter(latestTimestamp)) {
-                        latestTimestamp = timestamp;
-                    }
-                } catch (DateTimeParseException e) {
-                    System.out.println("Error occurred while parsing chat entry: " + e.getMessage());
-                }
-            }
-            return latestTimestamp;
-        } catch (FileNotFoundException e) {
-            System.out.println("Chat history file not found.");
-        } catch (IOException e) {
-            System.out.println("Error occurred while loading chat history: " + e.getMessage());
-        }
-        return null;
     }
 
     private class ChatEntry {

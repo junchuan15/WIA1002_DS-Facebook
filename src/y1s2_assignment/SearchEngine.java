@@ -54,7 +54,7 @@ public class SearchEngine {
             System.out.println("          5. By name");
             System.out.println("          6. Back to Main Menu");
             System.out.println("==============================================");
-            System.out.print("        Enter your choice: ");
+            System.out.print("Enter your choice: ");
 
             try {
                 int choice = sc.nextInt();
@@ -104,6 +104,11 @@ public class SearchEngine {
         } while (search.isEmpty());
 
         ArrayList<String> sortedList = display(inputList, search);
+
+        if (sortedList.isEmpty()) {
+            System.out.println("No matching results found.");
+            return; // Jump back to the search menu
+        }
 
         for (int i = 0; i < sortedList.size(); i++) {
             System.out.println((i + 1) + ". " + sortedList.get(i));
@@ -188,7 +193,6 @@ public class SearchEngine {
                 }
             }
         }
-
         return sortedList;
     }
 
