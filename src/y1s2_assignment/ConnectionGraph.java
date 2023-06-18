@@ -67,6 +67,26 @@ public class ConnectionGraph {
         }
     }
 
+    private List<User> getMutualFriends(User user1, User user2) {
+        List<User> mutualFriends = new ArrayList<>();
+        Vertex loggedInUserVertex = findVertex(user1);
+        Vertex otherUserVertex = findVertex(user2);
+
+        if (loggedInUserVertex != null && otherUserVertex != null) {
+            List<Vertex> loggedInUserFriends = loggedInUserVertex.getNeighbours();
+            List<Vertex> otherUserFriends = otherUserVertex.getNeighbours();
+
+            for (Vertex loggedInUserFriend : loggedInUserFriends) {
+                if (otherUserFriends.contains(loggedInUserFriend)) {
+                    User mutualFriend = loggedInUserFriend.getUser();
+                    mutualFriends.add(mutualFriend);
+                }
+            }
+        }
+
+        return mutualFriends;
+    }
+
     public List<User> showFirstDegreeConnections(User user) {
         List<User> firstDegree = new ArrayList<>();
         Vertex vertex = findVertex(user);
@@ -107,7 +127,7 @@ public class ConnectionGraph {
         return thirdDegree;
     }
 
-    public List<User> getRecommendedConnections(User loggedInUser) {
+     public List<User> getRecommendedConnections(User loggedInUser) {
         List<User> recommendedConnections = new ArrayList<>();
         Vertex loggedInUserVertex = findVertex(loggedInUser);
 
@@ -121,6 +141,7 @@ public class ConnectionGraph {
 
             while (!queue.isEmpty() && level <= 3) {
                 int size = queue.size();
+                List<Vertex> levelConnections = new ArrayList<>();
 
                 for (int i = 0; i < size; i++) {
                     Vertex current = queue.poll();
@@ -130,13 +151,28 @@ public class ConnectionGraph {
                             visited.add(neighbour);
                             queue.offer(neighbour);
                             if (level == 2 || level == 3) {
-                                if (!loggedInUserVertex.getNeighbours().contains(neighbour) && !hasFriend(loggedInUser, neighbour.getUser())) {
-                                    recommendedConnections.add(neighbour.getUser());
-                                }
+                                levelConnections.add(neighbour);
                             }
                         }
                     }
                 }
+
+                if (level == 2) {
+                    levelConnections.sort((v1, v2) -> {
+                        int mutuals1 = countMutualConnections(loggedInUserVertex, v1);
+                        int mutuals2 = countMutualConnections(loggedInUserVertex, v2);
+                        return Integer.compare(mutuals2, mutuals1);
+                    });
+
+                    for (Vertex vertex : levelConnections) {
+                        recommendedConnections.add(vertex.getUser());
+                    }
+                } else if (level == 3) {
+                    for (Vertex vertex : levelConnections) {
+                        recommendedConnections.add(vertex.getUser());
+                    }
+                }
+
                 level++;
             }
         }
@@ -251,6 +287,8 @@ public class ConnectionGraph {
 
         return -1; // Return -1 if the shortest distance is not found
     }
+    
+    
 
     // Check whether the graph works
     public String showAdjacency() {

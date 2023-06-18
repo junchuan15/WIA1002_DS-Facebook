@@ -8,9 +8,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.InputMismatchException;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import y1s2_assignment.ConnectionGraph.Vertex;
@@ -22,16 +26,13 @@ import y1s2_assignment.ConnectionGraph.Vertex;
 public class Friend {
 
     private User loggedInUser;
-    DatabaseSQL database = new DatabaseSQL();       
+    DatabaseSQL database = new DatabaseSQL();
     ConnectionGraph graph = database.createGraph();
     Scanner scanner = new Scanner(System.in);
-   
 
     public Friend(User loggedInUser) {
         this.loggedInUser = loggedInUser;
     }
-
-    
 
     public void sendFriendRequest(User user) {
         String username = user.getUsername();
@@ -406,104 +407,6 @@ public class Friend {
         }
     }
 
-    public void degreeRecommend() throws SQLException {
-        List<User> friends = graph.getRecommendedConnections(loggedInUser);
-
-        if (friends.isEmpty()) {
-            System.out.println("No friend recommendations available.");
-            return;
-        }
-
-        System.out.println("Friend Recommendations:");
-        int friendSize = Math.min(10, friends.size());
-        for (int i = 0; i < friendSize; i++) {
-            User recommendedFriend = friends.get(i);
-            Vertex loggedInUserVertex = graph.findVertex(loggedInUser);
-            Vertex recommendedFriendVertex = graph.findVertex(recommendedFriend);
-            int degree = determineDegree(loggedInUserVertex, recommendedFriendVertex);
-            int mutualConnections = graph.countMutualConnections(loggedInUserVertex, recommendedFriendVertex);
-
-            System.out.println((i + 1) + ". " + recommendedFriend.getUsername()
-                    + " (2nd Degree: " + (degree == 2 ? "Yes" : "No")
-                    + ", 3rd Degree: " + (degree == 3 ? "Yes" : "No")
-                    + ", Mutual Connections: " + mutualConnections + ")");
-
-            if (mutualConnections > 0) {
-                List<User> mutualFriends = getMutualFriends(loggedInUser, recommendedFriend);
-                System.out.println("Mutual Friends:");
-                for (User mutualFriend : mutualFriends) {
-                    System.out.println("- " + mutualFriend.getUsername());
-                }
-            }
-        }
-
-        int friendChoice = -1;
-        while (friendChoice != -1) {
-            System.out.print("Choose a friend from the recommendation list (enter the number, or -1 to go back): ");
-            try {
-                friendChoice = scanner.nextInt();
-                scanner.nextLine();
-
-                if (friendChoice == -1) {
-                    return; // Go back
-                } else if (friendChoice < 1 || friendChoice > friends.size()) {
-                    System.out.println("Invalid choice! Please try again.");
-                } else {
-                    User selectedFriend = friends.get(friendChoice - 1);
-                    action(selectedFriend);
-                }
-            } catch (InputMismatchException e) {
-                System.out.println("Invalid input! Please enter a valid number.");
-                scanner.nextLine();
-                friendChoice = -1;
-            }
-        }
-    }
-
-    private int determineDegree(Vertex loggedInUserVertex, Vertex recommendedFriendVertex) {
-        if (loggedInUserVertex != null && recommendedFriendVertex != null) {
-            List<Vertex> firstDegreeConnections = loggedInUserVertex.getNeighbours();
-            List<Vertex> secondDegreeConnections = new ArrayList<>();
-            List<Vertex> thirdDegreeConnections = new ArrayList<>();
-
-            for (Vertex firstDegree : firstDegreeConnections) {
-                secondDegreeConnections.addAll(firstDegree.getNeighbours());
-            }
-
-            for (Vertex secondDegree : secondDegreeConnections) {
-                thirdDegreeConnections.addAll(secondDegree.getNeighbours());
-            }
-
-            if (secondDegreeConnections.contains(recommendedFriendVertex)) {
-                return 2; // Recommended friend is a 2nd degree connection
-            } else if (thirdDegreeConnections.contains(recommendedFriendVertex)) {
-                return 3; // Recommended friend is a 3rd degree connection
-            } else {
-                return -1; // Recommended friend is not a direct connection
-            }
-        }
-
-        return -1; // Return -1 if either vertex is null
-    }
-
-    private List<User> getMutualFriends(User user1, User user2) {
-        List<User> mutualFriends = new ArrayList<>();
-        List<String> user1Friends = user1.getFriends();
-        List<String> user2Friends = user2.getFriends();
-
-        for (String friendName : user1Friends) {
-            if (user2Friends.contains(friendName)) {
-                User mutualFriend = database.getUser("UserName", friendName);
-                if (mutualFriend != null) {
-                    mutualFriends.add(mutualFriend);
-                }
-            }
-        }
-
-        return mutualFriends;
-    }
-
-    // I change using comparator instead of bubble sort
     public void publicRecommend() throws SQLException {
         List<User> users = new ArrayList<>(database.loadUsers());
         // Remove logged-in user and their friends from the recommendation list
@@ -572,6 +475,17 @@ public class Friend {
         }
     }
 
+    private int countMutualFriends(User user) {
+        Vertex loggedInUserVertex = graph.findVertex(loggedInUser);
+        Vertex userVertex = graph.findVertex(user);
+
+        if (loggedInUserVertex != null && userVertex != null) {
+            return graph.countMutualConnections(loggedInUserVertex, userVertex);
+        }
+
+        return 0;
+    }
+
     private int calculateScore(User user) {
         int score = 0;
 
@@ -591,13 +505,81 @@ public class Friend {
         return commonInterests.size();
     }
 
-    private int countMutualFriends(User user) {
-        Vertex loggedInUserVertex = graph.findVertex(user);
-        int count = 0;
+    public void degreeRecommend() throws SQLException {
+        List<User> recommendedFriends = graph.getRecommendedConnections(loggedInUser);
 
-        if (loggedInUserVertex != null) {
-            for (Vertex neighbour : loggedInUserVertex.getNeighbours()) {
-                count += graph.countMutualConnections(loggedInUserVertex, neighbour);
+        // Sort the recommended friends based on the number of mutuals in descending order
+        recommendedFriends.sort((u1, u2) -> {
+            int mutuals1 = countMutualConnections(loggedInUser, u1);
+            int mutuals2 = countMutualConnections(loggedInUser, u2);
+            return Integer.compare(mutuals2, mutuals1);
+        });
+
+        // Split the recommended friends into 2nd-degree and 3rd-degree connections
+        List<User> secondDegree = new ArrayList<>();
+        List<User> thirdDegree = new ArrayList<>();
+
+        for (User friend : recommendedFriends) {
+            int mutuals = countMutualConnections(loggedInUser, friend);
+            if (mutuals > 0) {
+                if (graph.getShortestDistance(loggedInUser, friend) == 2) {
+                    secondDegree.add(friend);
+                } else if (graph.getShortestDistance(loggedInUser, friend) == 3) {
+                    thirdDegree.add(friend);
+                }
+            }
+        }
+
+        // Sort the 2nd-degree connections based on the number of mutuals in descending order
+        secondDegree.sort((u1, u2) -> Integer.compare(countMutualConnections(loggedInUser, u2), countMutualConnections(loggedInUser, u1)));
+
+        // Sort the 3rd-degree connections alphabetically
+        thirdDegree.sort(Comparator.comparing(User::getUsername));
+
+        List<User> friendRecommendations = new ArrayList<>();
+
+        // Add the 2nd-degree connections with higher priority
+        friendRecommendations.addAll(secondDegree);
+
+        // Add the 3rd-degree connections with lower priority
+        friendRecommendations.addAll(thirdDegree);
+
+        if (friendRecommendations.isEmpty()) {
+            System.out.println("No friend recommendations available.");
+        } else {
+            System.out.println("Friend Recommendations:");
+            int count = 1;
+            for (User recommendedUser : friendRecommendations) {
+                System.out.println(count + ". " + recommendedUser.getUsername());
+                count++;
+            }
+
+            Scanner sc = new Scanner(System.in);
+            int friendChoice = 0;
+
+            while (friendChoice < 1 || friendChoice > friendRecommendations.size()) {
+                System.out.print("Choose a friend from the recommendation list (enter the number): ");
+                friendChoice = sc.nextInt();
+                sc.nextLine();
+
+                if (friendChoice < 1 || friendChoice > friendRecommendations.size()) {
+                    System.out.println("Invalid choice! Please try again.");
+                }
+            }
+
+            User selectedFriend = friendRecommendations.get(friendChoice - 1);
+            action(selectedFriend);
+        }
+    }
+
+    public int countMutualConnections(User user1, User user2) {
+        List<String> friends1 = user1.getFriends();
+        List<String> friends2 = user2.getFriends();
+
+        int count = 0;
+        for (String friend1 : friends1) {
+            if (friends2.contains(friend1)) {
+                count++;
             }
         }
 

@@ -513,7 +513,7 @@ public class PostManager {
         List<Post> filteredPosts = new ArrayList<>();
 
         for (Post post : posts) {
-            if (!post.getAccountID().equalsIgnoreCase(loggedinUser.getAccountID()) && post.getStatusAsString().equalsIgnoreCase("PRIVATE")) {
+            if (post.getAccountID() != loggedinUser.getAccountID() || post.getStatusAsString() != "PRIVATE") {
                 filteredPosts.add(post);
             }
         }

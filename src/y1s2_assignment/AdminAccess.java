@@ -149,12 +149,12 @@ public class AdminAccess extends UserAccess {
         System.out.println("Users:\n------------------------");
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
-            if (!user.getRole().equals("Admin")) {
+           
                 System.out.println("Index: " + i);
                 System.out.println("Account ID: " + user.getAccountID());
                 System.out.println("Username: " + user.getUsername());
                 System.out.println("------------------------");
-            }
+            
         }
 
         System.out.print("Enter the index of the user to delete [-1 to back]: ");
@@ -260,9 +260,7 @@ public class AdminAccess extends UserAccess {
         System.out.println("Users:\n------------------------");
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
-            if (user.getRole().equalsIgnoreCase("Admin")) {
-                continue;
-            }
+       
             System.out.println("Index: " + i);
             System.out.println("Account ID: " + user.getAccountID());
             System.out.println("Name: " + user.getName());
@@ -281,10 +279,7 @@ public class AdminAccess extends UserAccess {
 
             if (index >= 0 && index < users.size()) {
                 User user = users.get(index);
-                if (user.getRole().equalsIgnoreCase("Admin")) {
-                    System.out.println("Cannot ban an admin user.");
-                    return;
-                }
+               
                 System.out.println("User Details:\n------------------------");
                 System.out.println("Account ID: " + user.getAccountID());
                 System.out.println("Name: " + user.getName());
