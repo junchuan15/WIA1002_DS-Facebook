@@ -114,11 +114,10 @@ public class SearchEngine {
             System.out.println((i + 1) + ". " + sortedList.get(i));
         }
 
-        int selectedIndex = 0;
-
+        int selectedIndex = 1;
         do {
             System.out.println("==============================================");
-            System.out.print("Enter the index of the " + attribute + " you want to find: ");
+            System.out.print("Enter the index of the " + attribute + " you want to find : ");
             String input = sc.nextLine();
 
             try {

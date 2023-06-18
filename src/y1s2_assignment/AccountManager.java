@@ -69,7 +69,6 @@ public class AccountManager {
                                 if (loggedInUser.getName() == null) {
                                     userSetup(loggedInUser);
                                 }
-                                System.out.println("Login Successfully!\n");
                                 System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
                                 return loggedInUser;
 

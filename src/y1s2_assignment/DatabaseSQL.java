@@ -470,6 +470,7 @@ public class DatabaseSQL {
                 userPostsStatement.setString(1, user.getAccountID());
                 int userPostsRowsAffected = userPostsStatement.executeUpdate();
             }
+
         } catch (SQLException e) {
             System.out.println("An error occurred while deleting the user and posts from the database: " + e.getMessage());
         }
@@ -497,7 +498,7 @@ public class DatabaseSQL {
         return userList;
     }
 
-    public ConnectionGraph createGraph() {
+     public ConnectionGraph createGraph() {
         ConnectionGraph graph = new ConnectionGraph();
         ArrayList<User> users = loadUsers();
 

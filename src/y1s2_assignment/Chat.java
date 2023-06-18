@@ -85,7 +85,11 @@ public class Chat {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
             while ((line = reader.readLine()) != null) {
-                chatEntries.add(parseChatEntry(line));
+                try {
+                    chatEntries.add(parseChatEntry(line));
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Invalid chat entry encountered: " + line);
+                }
             }
             reader.close();
         } catch (IOException e) {
@@ -150,6 +154,11 @@ public class Chat {
 
     public void removeMessage(int index) {
         try {
+            if (chatEntries.isEmpty()) {
+                System.out.println("No messages found in the chat history.");
+                return;
+            }
+
             if (index >= 0 && index < chatEntries.size()) {
                 chatEntries.remove(index);
                 System.out.println("Message removed successfully.");
@@ -163,6 +172,11 @@ public class Chat {
 
     public void editMessage(int index, String newMessage) {
         try {
+            if (chatEntries.isEmpty()) {
+                System.out.println("No messages found in the chat history.");
+                return;
+            }
+
             if (index >= 0 && index < chatEntries.size()) {
                 ChatEntry entry = chatEntries.get(index);
                 String senderName = entry.getMessage().substring(0, entry.getMessage().indexOf(":") + 1);
@@ -178,6 +192,7 @@ public class Chat {
 
     public void startChatting(User friend) {
         try {
+            System.out.println("You are now chatting with " + friend.getUsername());
             loadChatHistory(friend);
             printChat(1);
 
@@ -185,7 +200,6 @@ public class Chat {
             String message;
             boolean isChatting = true;
 
-            System.out.println("You are now chatting with " + friend.getUsername());
             System.out.println("[Type exit to Exit; edit to Edit Message; delete to Delete Message]");
 
             while (isChatting) {
@@ -197,13 +211,13 @@ public class Chat {
                         isChatting = false;
                         break;
                     case "delete":
-                        System.out.print("Enter the index of the message to remove: ");
+                        System.out.print("Enter the index[0 as first line of chat] of the message to remove: ");
                         int index = scanner.nextInt();
                         scanner.nextLine();
                         removeMessage(index);
                         break;
                     case "edit":
-                        System.out.print("Enter the index of the message to edit: ");
+                        System.out.print("Enter the index[0 as first line of chat] of the message to edit: ");
                         index = scanner.nextInt();
                         scanner.nextLine();
                         System.out.print("Enter the new message: ");
@@ -236,7 +250,6 @@ public class Chat {
             if (friendObj != null) {
                 friendObjects.add(friendObj);
                 loadChatHistory(friendObj);
-
                 // Get the latest chat timestamp and last message for each friend
                 if (!chatEntries.isEmpty()) {
                     ChatEntry lastChatEntry = chatEntries.get(chatEntries.size() - 1);
@@ -255,7 +268,7 @@ public class Chat {
 
         if (friendObjects.isEmpty()) {
             System.out.println("You have no friends to chat with.");
-            return; 
+            return;
         }
 
         int choice = 1;
@@ -263,7 +276,11 @@ public class Chat {
             LocalDateTime latestTimestamp = latestChatTimestamps.get(friendObjects.indexOf(friend));
             String lastMessage = lastMessages.get(friendObjects.indexOf(friend));
 
-            System.out.println(choice + ". " + friend.getUsername() + " (Last Message: " + lastMessage + " at " + latestTimestamp + ")");
+            if (latestTimestamp.equals(LocalDateTime.MIN)) {
+                System.out.println(choice + ". " + friend.getUsername() + " (No chat history)");
+            } else {
+                System.out.println(choice + ". " + friend.getUsername() + " (Last Message: " + latestTimestamp + ")");
+            }
             choice++;
         }
 
@@ -278,7 +295,43 @@ public class Chat {
 
                 if (friendChoice >= 1 && friendChoice <= friendObjects.size()) {
                     User friend = friendObjects.get(friendChoice - 1);
-                    startChatting(friend);
+                    try {
+                        System.out.println("You are now chatting with " + friend.getUsername());
+                        printChat(1);
+                        String message;
+                        boolean isChatting = true;
+                        System.out.println("[Type exit to Exit; edit to Edit Message; delete to Delete Message]");
+                        while (isChatting) {
+                            System.out.print("You: ");
+                            message = scanner.nextLine();
+
+                            switch (message.toLowerCase()) {
+                                case "exit":
+                                    isChatting = false;
+                                    break;
+                                case "delete":
+                                    System.out.print("Enter the index[0 as first line of chat] of the message to remove: ");
+                                    int index = scanner.nextInt();
+                                    scanner.nextLine();
+                                    removeMessage(index);
+                                    break;
+                                case "edit":
+                                    System.out.print("Enter the index[0 as first line of chat] of the message to edit: ");
+                                    index = scanner.nextInt();
+                                    scanner.nextLine();
+                                    System.out.print("Enter the new message: ");
+                                    String newMessage = scanner.nextLine();
+                                    editMessage(index, newMessage);
+                                    break;
+                                default:
+                                    addMessage(loggedInUser.getUsername() + ": " + message);
+                                    break;
+                            }
+                        }
+                        saveChatHistory(friend);
+                    } catch (Exception e) {
+                        System.out.println("Error occurred during the chat: " + e.getMessage());
+                    }
                     validChoice = true;
                 } else {
                     System.out.println("Invalid choice. Please try again.");

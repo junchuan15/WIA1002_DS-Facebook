@@ -204,6 +204,8 @@ public class PostManager {
                 viewMedia(currentPost.getMediaPath());
             }
             System.out.println("     -----------------------------------");
+            System.out.println("==============================================");
+            System.out.println("Action : ");
             System.out.println("1. Next Post");
             System.out.println("2. Previous Post");
             System.out.println("3. Delete Post");
@@ -216,18 +218,20 @@ public class PostManager {
             System.out.print("Enter your choice: ");
             int choice = sc.nextInt();
             sc.nextLine();
-
+            System.out.println("==============================================");
             switch (choice) {
                 case 1:
                     currentIndex--;
                     if (currentIndex < 0) {
                         System.out.println("End of posts.");
+                        exit = true;
                     }
                     break;
                 case 2:
                     currentIndex++;
                     if (currentIndex >= posts.size()) {
                         System.out.println("Start of posts.");
+                        exit = true;
                     }
                     break;
                 case 3:
@@ -305,13 +309,15 @@ public class PostManager {
 
             while (!exit) {
                 Post currentPost = posts.get(currentIndex);
-                if (currentPost.getStatusAsString().equalsIgnoreCase("PRIVATE") && !user.getFriends().contains(loggedinUser)) {
-                    System.out.println("This is a private post. You are not authorized to view it.");
+
+                if (currentPost.getStatusAsString().equalsIgnoreCase("PRIVATE") && !user.getFriends().contains(loggedinUser.getUsername())) {
                     currentIndex--;
+
                     if (currentIndex < 0) {
                         System.out.println("End of posts.");
                         exit = true;
                     }
+
                     continue;
                 }
                 printPost(currentPost);
@@ -321,6 +327,7 @@ public class PostManager {
                 performAction("PostID:" + String.valueOf(currentPost.getPostID()) + " Viewed Post by " + database.getUser("Account_ID", currentPost.getAccountID()).getUsername());
                 System.out.println("     -----------------------------------");
                 System.out.println("==============================================");
+                System.out.println("Action : ");
                 System.out.println("1. Next Post");
                 System.out.println("2. Previous Post");
                 System.out.println("3. Like Post");
@@ -427,7 +434,6 @@ public class PostManager {
     }
 
     public void commentPost(Post post, User user) {
-        System.out.println("-------------------------");
         System.out.println("Write a comment.........");
         String comment = "";
         try {
@@ -436,7 +442,7 @@ public class PostManager {
             System.out.println("Invalid input. Please enter a valid comment.");
         }
         post.setComments(post.getComments() + 1);
-        String commentString = loggedinUser + ":" + comment;
+        String commentString = loggedinUser.getUsername() + ":" + comment;
         ArrayList<String> commentList = database.getList(post, "CommentList");
         commentList.add(commentString);
         performAction("PostID:" + String.valueOf(post.getPostID()) + " Comment '" + comment + "' on Post by " + user.getUsername());
@@ -465,7 +471,7 @@ public class PostManager {
     public void viewLikes(Post post) {
         ArrayList<String> likeList = database.getList(post, "LikeList");
         System.out.println("< 👍 " + post.getLikes() + " likes>");
-        System.out.println("-----------------------------------");
+        System.out.println("==============================================");
         System.out.println("Liked by");
 
         if (likeList.isEmpty()) {
@@ -483,7 +489,7 @@ public class PostManager {
     public void viewComments(Post post) {
         ArrayList<String> commentList = database.getList(post, "CommentList");
         System.out.println("< 💬 " + post.getComments() + " comments>");
-        System.out.println("-----------------------------------");
+        System.out.println("==============================================");
         if (commentList.isEmpty()) {
             System.out.println("No comments found.");
         } else {
@@ -507,7 +513,7 @@ public class PostManager {
         List<Post> filteredPosts = new ArrayList<>();
 
         for (Post post : posts) {
-            if (!post.getAccountID().equalsIgnoreCase(loggedinUser.getAccountID()) && post.getStatusAsString() != "PRIVATE") {
+            if (!post.getAccountID().equalsIgnoreCase(loggedinUser.getAccountID()) && post.getStatusAsString().equalsIgnoreCase("PRIVATE")) {
                 filteredPosts.add(post);
             }
         }
@@ -542,20 +548,21 @@ public class PostManager {
             return;
         }
 
-        int lastIndex = loggedinUser.getHistory().size() - 1;
-        String lastAction = loggedinUser.getHistory().get(lastIndex);
-        System.out.println("1. " + lastAction);
+        for (int i = loggedinUser.getHistory().size() - 1; i >= 0; i--) {
+            String action = loggedinUser.getHistory().get(i);
+            System.out.println((loggedinUser.getHistory().size() - i) + ". " + action);
+        }
 
-        System.out.print("Enter 1 to trace back the last action: ");
+        System.out.print("Enter the number to trace back the corresponding action: ");
         int choice = sc.nextInt();
         sc.nextLine();
 
-        if (choice != 1) {
+        if (choice < 1 || choice > loggedinUser.getHistory().size()) {
             System.out.println("Invalid choice.");
             return;
         }
 
-        String action = lastAction;
+        String action = loggedinUser.getHistory().get(loggedinUser.getHistory().size() - choice);
         String[] parts = action.split(" - ");
         if (parts.length < 2) {
             System.out.println("Invalid action format.");
@@ -579,8 +586,19 @@ public class PostManager {
             System.out.println("Invalid post ID.");
             return;
         }
+
         User user = database.getUser("UserName", username);
+        if (user == null) {
+            System.out.println("User not found.");
+            return;
+        }
+
         LinkedList<Post> posts = database.getPosts(user.getAccountID());
+        if (posts == null) {
+            System.out.println("Failed to retrieve user posts.");
+            return;
+        }
+
         for (Post post : posts) {
             if (post.getPostID() == postID) {
                 try {

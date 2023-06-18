@@ -75,7 +75,7 @@ public class ConnectionGraph {
             for (Vertex neighbour : vertex.getNeighbours()) {
                 firstDegree.add(neighbour.getUser());
             }
-        } 
+        }
         return firstDegree;
     }
 
@@ -130,21 +130,31 @@ public class ConnectionGraph {
                             visited.add(neighbour);
                             queue.offer(neighbour);
                             if (level == 2 || level == 3) {
-                                recommendedConnections.add(neighbour.getUser());
+                                if (!loggedInUserVertex.getNeighbours().contains(neighbour) && !hasFriend(loggedInUser, neighbour.getUser())) {
+                                    recommendedConnections.add(neighbour.getUser());
+                                }
                             }
                         }
                     }
                 }
                 level++;
             }
-
-            for (User user : recommendedConnections) {
-                Vertex userVertex = findVertex(user);
-
-            }
         }
 
         return recommendedConnections;
+    }
+
+    private boolean hasFriend(User user1, User user2) {
+        List<String> user1Friends = user1.getFriends();
+        List<String> user2Friends = user2.getFriends();
+
+        for (String friendName : user1Friends) {
+            if (user2Friends.contains(friendName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private List<String> bfs(User loggedInUser, int degree) {

@@ -140,6 +140,12 @@ public class AdminAccess extends UserAccess {
 
     public void deleteUser() {
         System.out.println("==============================================\nDELETE USER");
+
+        if (users.isEmpty() || users.size() == 1) {
+            System.out.println("No users found.");
+            return;
+        }
+
         System.out.println("Users:\n------------------------");
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
@@ -151,10 +157,14 @@ public class AdminAccess extends UserAccess {
             }
         }
 
-        System.out.print("Enter the index of the user to delete: ");
+        System.out.print("Enter the index of the user to delete [-1 to back]: ");
         if (sc.hasNextInt()) {
             int index = sc.nextInt();
             sc.nextLine();
+
+            if (index == -1) {
+                return;
+            }
 
             if (index >= 0 && index < users.size()) {
                 User user = users.get(index);
@@ -186,6 +196,12 @@ public class AdminAccess extends UserAccess {
 
     public void deletePost() {
         System.out.println("==============================================\nDELETE POST");
+
+        if (posts.isEmpty()) {
+            System.out.println("No posts found.");
+            return;
+        }
+
         System.out.println("Posts:\n------------------------");
         for (int i = 0; i < posts.size(); i++) {
             Post post = posts.get(i);
@@ -195,10 +211,14 @@ public class AdminAccess extends UserAccess {
             System.out.println("------------------------");
         }
 
-        System.out.print("Enter the index of the post to delete: ");
+        System.out.print("Enter the index of the post to delete [-1 to back]: ");
         if (sc.hasNextInt()) {
             int index = sc.nextInt();
             sc.nextLine();
+
+            if (index == -1) {
+                return;
+            }
 
             if (index >= 0 && index < posts.size()) {
                 Post post = posts.get(index);
@@ -208,8 +228,7 @@ public class AdminAccess extends UserAccess {
 
                 if (post.getMediaPath() != null && !post.getMediaPath().isEmpty()) {
                     System.out.println("Media: " + post.getMediaPath());
-                    pm.viewMedia(post.getMediaPath() );
-                    
+                    pm.viewMedia(post.getMediaPath());
                 }
                 System.out.println("------------------------");
                 System.out.print("Are you sure you want to delete this post? (Y/N): ");
@@ -232,6 +251,12 @@ public class AdminAccess extends UserAccess {
 
     public void banUser() {
         System.out.println("==============================================\nBAN USER");
+
+        if (users.isEmpty() || users.size() == 1) {
+            System.out.println("No users found.");
+            return;
+        }
+
         System.out.println("Users:\n------------------------");
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
@@ -245,10 +270,14 @@ public class AdminAccess extends UserAccess {
             System.out.println("------------------------");
         }
 
-        System.out.print("Enter the index of the user to ban: ");
+        System.out.print("Enter the index of the user to ban [-1 to back]: ");
         if (sc.hasNextInt()) {
             int index = sc.nextInt();
             sc.nextLine();
+
+            if (index == -1) {
+                return;
+            }
 
             if (index >= 0 && index < users.size()) {
                 User user = users.get(index);
@@ -299,10 +328,13 @@ public class AdminAccess extends UserAccess {
             System.out.println("------------------------");
         }
 
-        System.out.print("Enter the index of the user to unban: ");
+        System.out.print("Enter the index of the user to unban [-1 to back]: ");
         if (sc.hasNextInt()) {
             int index = sc.nextInt();
             sc.nextLine();
+            if (index == -1) {
+                return;
+            }
 
             if (index >= 0 && index < bannedUsers.size()) {
                 User user = bannedUsers.get(index);
@@ -331,9 +363,11 @@ public class AdminAccess extends UserAccess {
         System.out.println("==============================================\nADD BAD WORDS");
         String newBadWords;
         do {
-            System.out.print("Enter the bad word to add: ");
+            System.out.print("Enter the bad word to add [Enter 'Quit' to back]: ");
             newBadWords = sc.nextLine().trim();
-
+            if (newBadWords.equalsIgnoreCase("quit")) {
+                return;
+            }
             if (newBadWords.isEmpty()) {
                 System.out.println("Invalid input. Please enter a non-empty bad word.");
             }
@@ -410,7 +444,7 @@ public class AdminAccess extends UserAccess {
                         validChoice = true;
                         break;
                     case 2:
-                        deleteReportedPost(reports, post);
+                        deleteReportedPost(reports, posts);
                         validChoice = true;
                         break;
                     case 3:
@@ -436,25 +470,41 @@ public class AdminAccess extends UserAccess {
         }
     }
 
-    private void deleteReportedPost(ArrayList<String> reports, Post post) {
-        String report = reports.get(post.getPostID());
-        String[] reportInfo = report.split(":");
+    private void deleteReportedPost(ArrayList<String> reports, ArrayList<Post> posts) {
+        System.out.print("Enter the index of reported post to delete [-1 to back]: ");
+        if (sc.hasNextInt()) {
+            int index = sc.nextInt();
+            sc.nextLine();
 
-        if (reportInfo.length >= 3) {
-            int postIndex = Integer.parseInt(reportInfo[2]);
+            if (index == -1) {
+                return;
+            }
 
-            if (postIndex >= 0 && postIndex < posts.size()) {
-                Post reportedPost = posts.get(postIndex);
-                database.deletePost(reportedPost);
-                reports.remove(post.getPostID());
-                database.updatePost(post, "Report", reports);
+            if (index >= 0 && index < reports.size()) {
+                String report = reports.get(index);
+                String[] reportInfo = report.split(":");
+                if (reportInfo.length >= 3) {
+                    int postIndex = Integer.parseInt(reportInfo[2]);
 
-                System.out.println("Reported post deleted successfully.");
+                    if (postIndex >= 0 && postIndex < posts.size()) {
+                        Post reportedPost = posts.get(postIndex);
+                        database.deletePost(reportedPost);
+                        reports.remove(index);
+                        database.updatePost(post, "Report", reports);
+
+                        System.out.println("Reported post deleted successfully.");
+                    } else {
+                        System.out.println("Invalid post index.");
+                    }
+                } else {
+                    System.out.println("Invalid report format.");
+                }
             } else {
-                System.out.println("Invalid post index.");
+                System.out.println("Invalid index!");
             }
         } else {
-            System.out.println("Invalid report format.");
+            System.out.println("Invalid input! Please enter an integer index.");
         }
     }
+
 }
