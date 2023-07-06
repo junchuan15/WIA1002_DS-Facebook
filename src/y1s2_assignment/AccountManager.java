@@ -4,6 +4,8 @@
  */
 package y1s2_assignment;
 
+import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -15,39 +17,48 @@ public class AccountManager {
     private Scanner sc = new Scanner(System.in);
     private Validation validate = new Validation();
     private DatabaseSQL databaseSQL = new DatabaseSQL();
+    private Encryption encrypt = new Encryption();
 
-    public void UserRegister() {
-        System.out.println("==============================================\nSIGN UP now !");
+    public void UserRegister() throws SQLException {
+        System.out.println("==============================================\nSIGN UP NOW !");
         String Username = validate.validateUsername();
         String EmailAddress = validate.validateEmail();
         String ContactNumber = validate.validatePhoneNo();
         String Password = validate.validatePassword();
         User registeredUser = new User.Builder(Username, EmailAddress, ContactNumber, Password).build();
+
         if (validate.isAdmin(registeredUser)) {
             registeredUser.setRole("Admin");
             registeredUser.setAccountID(databaseSQL.generateAccountID(registeredUser.getRole()));
-
         } else {
             registeredUser.setRole("User");
             registeredUser.setAccountID(databaseSQL.generateAccountID(registeredUser.getRole()));
         }
 
+        String encryptedPassword = encrypt.encryption(registeredUser.getAccountID(), Password);
+        registeredUser.setPassword(encryptedPassword);
+
         databaseSQL.registerUser(registeredUser);
         System.out.print("Register Successfully\n\n");
     }
 
-    public User userLogin() {
-        System.out.println("==============================================\nLOGIN now! ");
+    public User userLogin() throws SQLException {
+        System.out.println("==============================================\nLOGIN NOW! ");
         boolean isLoggedIn = false;
         String loginId;
         while (!isLoggedIn) {
-            System.out.print("Email Address or Phone Number: ");
+            System.out.print("Email Address/Phone Number: ");
             loginId = sc.nextLine();
             User loggedInUser = databaseSQL.getUserLogin(loginId);
             if (loggedInUser != null) {
                 System.out.print("Password: ");
                 String loginPw = sc.nextLine();
-                if (validate.validatePassword(loginPw, loggedInUser.getPassword())) {
+                while (loginPw.length() < 8 || loginPw.length() > 16) {
+                    System.out.println("Invalid password length. Password must be between 8 and 16 characters.");
+                    System.out.print("Password: ");
+                    loginPw = sc.nextLine();
+                }
+                if (encrypt.validatePassword(loggedInUser.getAccountID(), loginPw, loggedInUser.getPassword())) {
                     if (validate.isAdmin(loggedInUser)) {
                         System.out.println("You are logged in as an admin.");
                         int attempts = 0;
@@ -63,22 +74,25 @@ public class AccountManager {
                                 if (loggedInUser.getName() == null) {
                                     userSetup(loggedInUser);
                                 }
-                                System.out.println("Login Successfully!\n");
                                 System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
                                 return loggedInUser;
 
                             } else {
                                 attempts++;
-                                System.out.println("Invalid key password. Attempts left: " + (3 - attempts));
+                                System.out.println("Invalid secret code. Attempts left: " + (3 - attempts));
                             }
                         }
 
-                        System.out.println("Key password authentication failed. Returning to login screen.");
+                        if (!isSecretCode) {
+                            System.out.println("Secret code authentication failed. Account will be banned for 1 day.");
+                            loggedInUser.setBanned(true);
+                            loggedInUser.setBanEndTime(LocalDateTime.now().plusHours(24));
+                            databaseSQL.updateUserDetail(loggedInUser);
+                        }
                     } else {
                         if (loggedInUser.getName() == null) {
                             userSetup(loggedInUser);
                         }
-                        System.out.println("Login Successfully!\n");
                         System.out.println("Welcome, " + loggedInUser.getUsername() + "!");
                         System.out.println("You are logged in as a regular user.");
                         return loggedInUser;
@@ -122,8 +136,8 @@ public class AccountManager {
                 .setNumberOfFriends(0)
                 .setHobbies(hobbies)
                 .setJobs(jobs)
-                .setFriends(new ArrayList<>()) 
-                .setSentRequests(new ArrayList<>()) 
+                .setFriends(new ArrayList<>())
+                .setSentRequests(new ArrayList<>())
                 .setReceivedRequests(new ArrayList<>())
                 .build();
 

@@ -10,11 +10,14 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  *
@@ -37,7 +40,6 @@ public class Chat {
     }
 
     public void printChat(int page) {
-        System.out.println("Chat History:");
         if (chatEntries.isEmpty()) {
             System.out.println("No messages found in the chat history.");
         } else {
@@ -52,9 +54,8 @@ public class Chat {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             for (int i = startIndex; i < endIndex; i++) {
                 ChatEntry entry = chatEntries.get(i);
-                String senderName = entry.getMessage().substring(0, entry.getMessage().indexOf(":") + 1);
                 String formattedTimestamp = entry.getTimestamp().format(formatter);
-                System.out.println(formattedTimestamp + " " + senderName + " " + entry.getMessage());
+                System.out.println(formattedTimestamp + " " + entry.getMessage());
             }
         }
     }
@@ -69,7 +70,6 @@ public class Chat {
                 writer.newLine();
             }
             writer.close();
-            System.out.println("Chat history with " + friend.getUsername() + " saved successfully.");
         } catch (IOException e) {
             System.out.println("Error occurred while saving chat history: " + e.getMessage());
         }
@@ -88,10 +88,13 @@ public class Chat {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
             while ((line = reader.readLine()) != null) {
-                chatEntries.add(parseChatEntry(line));
+                try {
+                    chatEntries.add(parseChatEntry(line));
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Invalid chat entry encountered: " + line);
+                }
             }
             reader.close();
-            System.out.println("Chat history with " + friend.getUsername() + " loaded successfully.");
         } catch (IOException e) {
             System.out.println("Error occurred while loading chat history: " + e.getMessage());
         }
@@ -154,6 +157,11 @@ public class Chat {
 
     public void removeMessage(int index) {
         try {
+            if (chatEntries.isEmpty()) {
+                System.out.println("No messages found in the chat history.");
+                return;
+            }
+
             if (index >= 0 && index < chatEntries.size()) {
                 chatEntries.remove(index);
                 System.out.println("Message removed successfully.");
@@ -167,6 +175,11 @@ public class Chat {
 
     public void editMessage(int index, String newMessage) {
         try {
+            if (chatEntries.isEmpty()) {
+                System.out.println("No messages found in the chat history.");
+                return;
+            }
+
             if (index >= 0 && index < chatEntries.size()) {
                 ChatEntry entry = chatEntries.get(index);
                 String senderName = entry.getMessage().substring(0, entry.getMessage().indexOf(":") + 1);
@@ -182,34 +195,41 @@ public class Chat {
 
     public void startChatting(User friend) {
         try {
+            System.out.println("You are now chatting with " + friend.getUsername());
             loadChatHistory(friend);
             printChat(1);
 
             Scanner scanner = new Scanner(System.in);
             String message;
+            boolean isChatting = true;
 
-            while (true) {
-                System.out.println("You are now chatting with " + friend.getUsername());
-                System.out.println("[Type exit to Exit; edit to Edit Message; delete to Delete Message]");
+            System.out.println("[Type exit to Exit; edit to Edit Message; delete to Delete Message]");
+
+            while (isChatting) {
                 System.out.print("You: ");
                 message = scanner.nextLine();
 
-                if (message.equalsIgnoreCase("exit")) {
-                    break;
-                } else if (message.equalsIgnoreCase("remove")) {
-                    System.out.print("Enter the index of the message to remove: ");
-                    int index = scanner.nextInt();
-                    scanner.nextLine();
-                    removeMessage(index);
-                } else if (message.equalsIgnoreCase("edit")) {
-                    System.out.print("Enter the index of the message to edit: ");
-                    int index = scanner.nextInt();
-                    scanner.nextLine();
-                    System.out.print("Enter the new message: ");
-                    String newMessage = scanner.nextLine();
-                    editMessage(index, newMessage);
-                } else {
-                    addMessage(loggedInUser.getUsername() + ": " + message);
+                switch (message.toLowerCase()) {
+                    case "exit":
+                        isChatting = false;
+                        break;
+                    case "delete":
+                        System.out.print("Enter the index[0 as first line of chat] of the message to remove: ");
+                        int index = scanner.nextInt();
+                        scanner.nextLine();
+                        removeMessage(index);
+                        break;
+                    case "edit":
+                        System.out.print("Enter the index[0 as first line of chat] of the message to edit: ");
+                        index = scanner.nextInt();
+                        scanner.nextLine();
+                        System.out.print("Enter the new message: ");
+                        String newMessage = scanner.nextLine();
+                        editMessage(index, newMessage);
+                        break;
+                    default:
+                        addMessage(loggedInUser.getUsername() + ": " + message);
+                        break;
                 }
             }
             saveChatHistory(friend);
@@ -220,6 +240,9 @@ public class Chat {
 
     public void chatManager() {
         Scanner scanner = new Scanner(System.in);
+         System.out.println("==============================================");
+        System.out.println("                 MESSENGER                       ");
+        System.out.println("==============================================");
         System.out.println("You have entered the chat manager. Choose a friend to chat with:");
 
         ArrayList<String> friends = loggedInUser.getFriends();
@@ -227,27 +250,39 @@ public class Chat {
 
         for (String friend : friends) {
             User friendObj = database.getUser("UserName", friend);
-            friendObjects.add(friendObj);
+            if (friendObj != null) {
+                friendObjects.add(friendObj);
+            }
         }
 
         if (friendObjects.isEmpty()) {
             System.out.println("You have no friends to chat with.");
-            return; // Return to the main menu
+            return;
         }
 
-        // Compare and display the latest time on top
-        /* friendObjects.sort(Comparator.comparing((User friend) -> {
-        String fileName = generateChatHistoryFileName(friend);
-        if (fileName != null && Files.exists(Paths.get(fileName))) {
-            return getLatestChatTimestamp(friend);
-        } else {
-            System.out.println("Chat history file not found for " + friend.getUsername());
-        }
-        return null; // or handle the error case accordingly
-    }, Comparator.nullsLast(Comparator.reverseOrder()))); */
+        friendObjects.sort(Comparator.comparing(friend -> {
+            LocalDateTime latestTimestamp = getLatestChatTimestamp(loggedInUser.getUsername(), friend.getUsername());
+            LocalDateTime now = LocalDateTime.now();
+            long minutesAgo = ChronoUnit.MINUTES.between(latestTimestamp, now);
+            return minutesAgo;
+        }));
+
         int choice = 1;
+
         for (User friend : friendObjects) {
-            System.out.println(choice + ". " + friend.getUsername());
+            String lastMessage = getLastChatMessage(loggedInUser.getUsername(), friend.getUsername());
+            LocalDateTime latestTimestamp = getLatestChatTimestamp(loggedInUser.getUsername(), friend.getUsername());
+
+            if (latestTimestamp.equals(LocalDateTime.MIN)) {
+                System.out.println(choice + ". " + friend.getUsername());
+            } else {
+                LocalDateTime now = LocalDateTime.now();
+                long minutesAgo = ChronoUnit.MINUTES.between(latestTimestamp, now);
+                String timeAgo = (minutesAgo <= 0) ? "just now" : minutesAgo + " minute(s) ago";
+
+                System.out.println(choice + ". " + friend.getUsername() + " (Last Message: " + timeAgo + ")");
+            }
+
             choice++;
         }
 
@@ -262,7 +297,44 @@ public class Chat {
 
                 if (friendChoice >= 1 && friendChoice <= friendObjects.size()) {
                     User friend = friendObjects.get(friendChoice - 1);
-                    startChatting(friend);
+                    try {
+                        System.out.println("You are now chatting with " + friend.getUsername());
+                        loadChatHistory(friend);
+                        printChat(1);
+                        String message;
+                        boolean isChatting = true;
+                        System.out.println("[Type exit to Exit; edit to Edit Message; delete to Delete Message]");
+                        while (isChatting) {
+                            System.out.print("You: ");
+                            message = scanner.nextLine();
+                            switch (message.toLowerCase()) {
+                                case "exit":
+                                    isChatting = false;
+                                    break;
+                                case "delete":
+                                    System.out.print("Enter the index[0 as the first line of chat] of the message to remove: ");
+                                    int index = scanner.nextInt();
+                                    scanner.nextLine();
+                                    removeMessage(index);
+                                    break;
+                                case "edit":
+                                    System.out.print("Enter the index[0 as the first line of chat] of the message to edit: ");
+                                    index = scanner.nextInt();
+                                    scanner.nextLine();
+                                    System.out.print("Enter the new message: ");
+                                    String newMessage = scanner.nextLine();
+                                    editMessage(index, newMessage);
+                                    break;
+                                default:
+                                    addMessage(loggedInUser.getUsername() + ": " + message);
+                                    break;
+                            }
+                        }
+                        saveChatHistory(friend);
+                        clearChatHistory();
+                    } catch (Exception e) {
+                        System.out.println("Error occurred during the chat: " + e.getMessage());
+                    }
                     validChoice = true;
                 } else {
                     System.out.println("Invalid choice. Please try again.");
@@ -274,49 +346,58 @@ public class Chat {
         }
     }
 
-    private LocalDateTime getLatestChatTimestamp(User friend) {
-        if (friend == null) {
-            System.out.println("Invalid friend.");
-            return null;
-        }
+    private void clearChatHistory() {
+        chatEntries.clear();
 
-        String fileName = generateChatHistoryFileName(friend);
-        if (fileName == null) {
-            System.out.println("Invalid file name.");
-            return null;
-        }
+    }
 
-        try ( BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
-            String line;
-            LocalDateTime latestTimestamp = null;
-            while ((line = reader.readLine()) != null) {
-                try {
-                    ChatEntry entry = parseChatEntry(line);
-                    LocalDateTime timestamp = entry.getTimestamp();
-                    if (latestTimestamp == null || timestamp.isAfter(latestTimestamp)) {
-                        latestTimestamp = timestamp;
-                    }
-                } catch (DateTimeParseException e) {
-                    System.out.println("Error occurred while parsing chat entry: " + e.getMessage());
+    private LocalDateTime getLatestChatTimestamp(String sender, String receiver) {
+        LocalDateTime latestTimestamp = LocalDateTime.MIN;
+
+        for (ChatEntry entry : chatEntries) {
+            if ((entry.getSender().equals(sender) && entry.getReceiver().equals(receiver))
+                    || (entry.getSender().equals(receiver) && entry.getReceiver().equals(sender))) {
+                LocalDateTime timestamp = entry.getTimestamp();
+                if (timestamp.isAfter(latestTimestamp)) {
+                    latestTimestamp = timestamp;
                 }
             }
-            return latestTimestamp;
-        } catch (FileNotFoundException e) {
-            System.out.println("Chat history file not found.");
-        } catch (IOException e) {
-            System.out.println("Error occurred while loading chat history: " + e.getMessage());
         }
-        return null;
+
+        return latestTimestamp;
+    }
+
+    private String getLastChatMessage(String sender, String receiver) {
+        String lastMessage = "";
+
+        for (ChatEntry entry : chatEntries) {
+            if ((entry.getSender().equals(sender) && entry.getReceiver().equals(receiver))
+                    || (entry.getSender().equals(receiver) && entry.getReceiver().equals(sender))) {
+                lastMessage = entry.getMessage();
+            }
+        }
+
+        return lastMessage;
     }
 
     private class ChatEntry {
 
+        private String senderUsername;
+        private String receiverUsername;
         private String message;
         private LocalDateTime timestamp;
 
         public ChatEntry(String message, LocalDateTime timestamp) {
             this.message = message;
             this.timestamp = timestamp;
+        }
+
+        public String getSender() {
+            return senderUsername;
+        }
+
+        public String getReceiver() {
+            return receiverUsername;
         }
 
         public String getMessage() {

@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.YearMonth;
@@ -27,6 +28,7 @@ import java.util.regex.Pattern;
 public class Validation {
 
     private DatabaseSQL database = new DatabaseSQL();
+    private Encryption encrypt = new Encryption();
     Scanner sc = new Scanner(System.in);
 
     public String validateUsername() {
@@ -78,7 +80,7 @@ public class Validation {
         String ContactNumberInput = "";
         boolean isValidPhoneNumber = false;
         while (!isValidPhoneNumber) {
-            System.out.print("Phone Number: ");
+            System.out.print("Contact Number: ");
             ContactNumberInput = sc.nextLine();
             if (Checkinglength(ContactNumberInput, 7, 15)) {
                 System.out.println("The length of Contact Number must be between 7-15.");
@@ -99,7 +101,7 @@ public class Validation {
         return ContactNumberInput;
     }
 
-    public String validatePassword() {
+    public String validatePassword() throws SQLException {
         String PasswordInput = "";
         boolean isValidPassword = false;
         String regex_pw = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&+*=!?.~_\\|{}\\[\\]();:,<>/\\\\])[ -~]{8,}$";
@@ -108,8 +110,8 @@ public class Validation {
             PasswordInput = sc.nextLine();
             if (!Validification(PasswordInput, regex_pw)) {
                 System.out.println("Password Invalid.");
-                if (PasswordInput.length() < 8) {
-                    System.out.println("Password must be at least 8 characters long.");
+                if (PasswordInput.length() < 8 && PasswordInput.length()>16) {
+                    System.out.println("Password must be between 8-16 characters long.");
                 }
                 if (!PasswordInput.matches(".*[A-Z].*")) {
                     System.out.println("Password must contain at least one uppercase letter.");
@@ -132,7 +134,7 @@ public class Validation {
                     System.out.print("Retype Password: ");
                     retypePassword = sc.nextLine();
                 }
-                PasswordInput = encryptPassword(PasswordInput);
+                
             }
         }
         return PasswordInput;
@@ -345,72 +347,6 @@ public class Validation {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(string);
         return matcher.matches();
-    }
-
-    public String encryptPassword(String password) {
-        try {
-            SecureRandom random = new SecureRandom();
-            byte[] salt = new byte[16];
-            random.nextBytes(salt);
-
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(salt);
-            byte[] hash = md.digest(password.getBytes(StandardCharsets.UTF_8));
-
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            hexString.append("|");
-            for (byte b : salt) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("Error encrypting password.");
-            return null;
-        }
-    }
-
-    public boolean validatePassword(String inputPassword, String encryptedPassword) {
-        String[] parts = encryptedPassword.split("\\|");
-        String hashPart = parts[0];
-        String saltPart = parts[1];
-
-        try {
-            byte[] salt = new byte[saltPart.length() / 2];
-            for (int i = 0; i < salt.length; i++) {
-                int index = i * 2;
-                int value = Integer.parseInt(saltPart.substring(index, index + 2), 16);
-                salt[i] = (byte) value;
-            }
-
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(salt);
-            byte[] hash = md.digest(inputPassword.getBytes(StandardCharsets.UTF_8));
-
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-
-            return hexString.toString().equals(hashPart);
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("Error decrypting password.");
-            return false;
-        }
     }
 
 }

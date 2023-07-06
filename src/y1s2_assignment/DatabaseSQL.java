@@ -269,12 +269,12 @@ public class DatabaseSQL {
                 queryParams.add(user.getRelationshipStatus());
             }
 
-            if (user.getHobbies() != null) {
+            if (user.getHobbies() != null && !user.getHobbies().isEmpty()) {
                 queryBuilder.append("Hobbies=?, ");
                 queryParams.add(joinWithComma(user.getHobbies()));
             }
 
-            if (user.getJobs() != null) {
+            if (user.getJobs() != null && !user.getJobs().isEmpty()) {
                 queryBuilder.append("Jobs=?, ");
                 queryParams.add(joinWithComma(user.getJobs()));
             }
@@ -284,23 +284,22 @@ public class DatabaseSQL {
                 queryParams.add(user.getNumberOfFriends());
             }
 
-            if (user.getFriends() != null) {
+            if (user.getFriends() != null && !user.getFriends().isEmpty()) {
                 queryBuilder.append("Friends=?, ");
                 queryParams.add(joinWithComma(user.getFriends()));
             }
 
-            if (user.getSentRequests() != null) {
+            if (user.getSentRequests() != null && !user.getSentRequests().isEmpty()) {
                 queryBuilder.append("SentRequests=?, ");
                 queryParams.add(joinWithComma(user.getSentRequests()));
             }
 
-            if (user.getReceivedRequests() != null) {
+            if (user.getReceivedRequests() != null && !user.getReceivedRequests().isEmpty()) {
                 queryBuilder.append("ReceivedRequests=?, ");
                 queryParams.add(joinWithComma(user.getReceivedRequests()));
             }
 
             queryBuilder.setLength(queryBuilder.length() - 2);
-
             queryBuilder.append(" WHERE Account_ID=?");
             queryParams.add(user.getAccountID());
 
@@ -320,25 +319,28 @@ public class DatabaseSQL {
         }
     }
 
-    private String joinWithComma(List<String> list) {
+    public String joinWithComma(List<String> list) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < list.size(); i++) {
-            String element = list.get(i);
-            if (element != null) {
-                sb.append(element);
-                if (i < list.size() - 1) {
+        boolean isFirst = true;
+        for (String element : list) {
+            if (element != null && !element.isEmpty()) {
+                if (isFirst) {
+                    isFirst = false;
+                } else {
                     sb.append(",");
                 }
+                sb.append(element);
             }
         }
         return sb.toString();
     }
 
-    public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList) {
+    public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList, ArrayList<ArrayList<String>> hobbiesList, User user) {
         try {
             Connection con = DriverManager.getConnection(url, username, password);
             Statement statement = con.createStatement();
-            ResultSet rs = statement.executeQuery("SELECT * FROM usersdata WHERE Role <> 'Admin'");
+            String query = "SELECT * FROM usersdata WHERE Account_ID <> '" + user.getAccountID() + "'";
+            ResultSet rs = statement.executeQuery(query);
 
             while (rs.next()) {
                 String accountID = rs.getString("Account_ID");
@@ -346,12 +348,18 @@ public class DatabaseSQL {
                 String email = rs.getString("EmailAddress");
                 String contactNumber = rs.getString("ContactNumber");
                 String name = rs.getString("Name");
+                String hobbiesString = rs.getString("Hobbies");
 
                 accountIDList.add(accountID);
                 usernameList.add(username);
                 emailList.add(email);
                 contactNumberList.add(contactNumber);
                 nameList.add(name);
+
+                // Split the hobbiesString into individual hobbies using comma as the delimiter
+                String[] hobbiesArray = hobbiesString.split(",");
+                ArrayList<String> hobbies = new ArrayList<>(Arrays.asList(hobbiesArray));
+                hobbiesList.add(hobbies);
             }
 
             rs.close();
@@ -457,13 +465,20 @@ public class DatabaseSQL {
     public void deleteUserSQL(User user) {
         try {
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
-            String deleteQuery = "DELETE FROM usersdata WHERE Account_ID = ?";
-            try ( PreparedStatement statement = connection.prepareStatement(deleteQuery)) {
-                statement.setString(1, user.getAccountID());
-                int rowsAffected = statement.executeUpdate();
+            String deleteUserDataQuery = "DELETE FROM usersdata WHERE Account_ID = ?";
+            try ( PreparedStatement userDataStatement = connection.prepareStatement(deleteUserDataQuery)) {
+                userDataStatement.setString(1, user.getAccountID());
+                int userDataRowsAffected = userDataStatement.executeUpdate();
             }
+
+            String deleteUserPostsQuery = "DELETE FROM userspost WHERE Account_ID = ?";
+            try ( PreparedStatement userPostsStatement = connection.prepareStatement(deleteUserPostsQuery)) {
+                userPostsStatement.setString(1, user.getAccountID());
+                int userPostsRowsAffected = userPostsStatement.executeUpdate();
+            }
+
         } catch (SQLException e) {
-            System.out.println("An error occurred while deleting the user from the database: " + e.getMessage());
+            System.out.println("An error occurred while deleting the user and posts from the database: " + e.getMessage());
         }
     }
 
@@ -685,4 +700,86 @@ public class DatabaseSQL {
             }
         }
     }
+
+    public ArrayList<Post> getAllPosts() {
+        ArrayList<Post> posts = new ArrayList<>();
+
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            String query = "SELECT * FROM userspost";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet rs = statement.executeQuery();
+
+            while (rs.next()) {
+                LocalDateTime timeStamp = rs.getTimestamp("PostTime").toLocalDateTime();
+                int postID = rs.getInt("Post_ID");
+                String accountID = rs.getString("Account_ID");
+                String content = rs.getString("Content");
+                String mediaPath = rs.getString("MediaPath");
+                String statusString = rs.getString("status");
+                Post.Status status = Post.Status.valueOf(statusString);
+                int likes = rs.getInt("Num_Likes");
+                int comments = rs.getInt("Num_Comments");
+
+                Post.PostBuilder postBuilder;
+                if (mediaPath != null && !mediaPath.isEmpty()) {
+                    postBuilder = new Post.PostBuilder(timeStamp, postID, accountID, content, mediaPath, status);
+                } else {
+                    postBuilder = new Post.PostBuilder(timeStamp, postID, accountID, content, status);
+                }
+
+                Post post = postBuilder
+                        .setLikes(likes)
+                        .setComments(comments)
+                        .build();
+
+                posts.add(post);
+            }
+
+            rs.close();
+            statement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return posts;
+    }
+
+    public void insertUserSalt(String accountID, String salt) throws SQLException {
+        try {
+            connectAndFetchData();
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            PreparedStatement ps = con.prepareStatement("INSERT INTO userspassword (Account_ID, Salt) VALUES (?, ?)");
+            ps.setString(1, accountID);
+            ps.setString(2, salt);
+            ps.executeUpdate();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String retrieveUserSalt(String accountID) throws SQLException {
+        String salt = null;
+
+        try {
+            connectAndFetchData();
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/users", "root", "Facebook123!");
+            PreparedStatement ps = con.prepareStatement("SELECT Salt FROM userspassword WHERE Account_ID = ?");
+            ps.setString(1, accountID);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                salt = rs.getString("Salt");
+            }
+
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return salt;
+    }
+
 }

@@ -4,9 +4,11 @@
  */
 package y1s2_assignment;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 /**
@@ -20,94 +22,195 @@ public class SearchEngine {
     private ArrayList<String> emailList;
     private ArrayList<String> contactNumberList;
     private ArrayList<String> nameList;
+    private ArrayList<ArrayList<String>> hobbies;
     private DatabaseSQL database = new DatabaseSQL();
     private UserAccess userAccess = new UserAccess();
     private User loggedInUser;
     private Friend friendManager;
+    private Scanner sc;
 
     public SearchEngine(User loggedInUser) {
         this.loggedInUser = loggedInUser;
+        this.accountIDList = new ArrayList<>();
+        this.usernameList = new ArrayList<>();
+        this.emailList = new ArrayList<>();
+        this.contactNumberList = new ArrayList<>();
+        this.nameList = new ArrayList<>();
+        this.hobbies = new ArrayList<>();
         this.friendManager = new Friend(loggedInUser);
-        accountIDList = new ArrayList<>();
-        usernameList = new ArrayList<>();
-        emailList = new ArrayList<>();
-        contactNumberList = new ArrayList<>();
-        nameList = new ArrayList<>();
-        database.readFromTable(accountIDList, usernameList, emailList, contactNumberList, nameList);
+        this.sc = new Scanner(System.in);
+        this.database.readFromTable(accountIDList, usernameList, emailList, contactNumberList, nameList, hobbies, loggedInUser);
     }
 
     public void searchUsers() {
-        Scanner sc = new Scanner(System.in);
-        boolean exit1 = false;
+        boolean exit = false;
 
-        while (!exit1) {
-            System.out.println("==============================================\nSEARCH: ");
-            System.out.println("1. By account ID");
-            System.out.println("2. By username");
-            System.out.println("3. By email");
-            System.out.println("4. By contact number");
-            System.out.println("5. By name");
-            System.out.println("6. Back to Main Menu");
+        while (!exit) {
+            System.out.println("==============================================");
+            System.out.println("                 SEARCH                        ");
+            System.out.println("==============================================");
+            System.out.println("          1. By account ID");
+            System.out.println("          2. By username");
+            System.out.println("          3. By email");
+            System.out.println("          4. By contact number");
+            System.out.println("          5. By name");
+            System.out.println("          6. By hobbies");
+            System.out.println("          7. Back to Main Menu");
+            System.out.println("==============================================");
             System.out.print("Enter your choice: ");
-            int choice1 = sc.nextInt();
-            sc.nextLine();
 
-            switch (choice1) {
-                case 1:
-                    searchField(accountIDList, "Account_ID");
-                    break;
-                case 2:
-                    searchField(usernameList, "UserName");
-                    break;
-                case 3:
-                    searchField(emailList, "EmailAddress");
-                    break;
-                case 4:
-                    searchField(contactNumberList, "ContactNumber");
-                    break;
-                case 5:
-                    searchField(nameList, "Name");
-                    break;
-                case 6:
-                    exit1 = true;
-                    System.out.println("Returning to Main Menu...");
-                    break;
-                default:
-                    System.out.println("Invalid choice! Please try again.");
-                    break;
+            try {
+                int choice = sc.nextInt();
+                sc.nextLine();
+                System.out.println("==============================================");
+                switch (choice) {
+                    case 1:
+                        searchField(accountIDList, "Account_ID");
+                        break;
+                    case 2:
+                        searchField(usernameList, "UserName");
+                        break;
+                    case 3:
+                        searchField(emailList, "EmailAddress");
+                        break;
+                    case 4:
+                        searchField(contactNumberList, "ContactNumber");
+                        break;
+                    case 5:
+                        searchField(nameList, "Name");
+                        break;
+                    case 6:
+                        searchFieldHobby(hobbies, "Hobbies");
+                    case 7:
+                        exit = true;
+                        System.out.println("Returning to Main Menu...");
+                        break;
+                    default:
+                        System.out.println("Invalid choice! Please try again.");
+                        break;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input! Please enter a number.");
+                sc.nextLine();
             }
         }
     }
 
     public void searchField(ArrayList<String> inputList, String attribute) {
-        Scanner sc = new Scanner(System.in);
+        String search;
 
-        String search = null;
-        while (search == null || search.isEmpty()) {
-            System.out.print("Type a " + attribute + ": ");
+        do {
+            System.out.print("Search " + attribute + ": ");
             search = sc.nextLine();
+            System.out.println("==============================================");
             if (search.isEmpty()) {
                 System.out.println("Input cannot be empty. Please try again.");
             }
+        } while (search.isEmpty());
+
+        ArrayList<String> sortedList = display(inputList, search);
+
+        if (sortedList.isEmpty()) {
+            System.out.println("No matching results found.");
+            return; // Jump back to the search menu
         }
 
-        display(inputList, search);
+        for (int i = 0; i < sortedList.size(); i++) {
+            System.out.println((i + 1) + ". " + sortedList.get(i));
+        }
 
-        String correct = null;
-        while (correct == null || correct.isEmpty()) {
-            System.out.print("Select the " + attribute + " you want to find: ");
-            correct = sc.nextLine();
-            if (correct.isEmpty()) {
-                System.out.println("Input cannot be empty. Please try again.");
+        int selectedIndex = 1;
+        do {
+            System.out.println("==============================================");
+            System.out.print("Enter the index of the Hobbies you want to find: ");
+            String input = sc.nextLine();
+
+            try {
+                selectedIndex = Integer.parseInt(input);
+                if (selectedIndex >= 1 && selectedIndex <= sortedList.size()) {
+                    break;
+                } else {
+                    System.out.println("Invalid index! Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Please enter a valid index.");
             }
-        }
+        } while (true);
 
-        Friend friend = new Friend(loggedInUser);
-        User searchedUser = database.getUser(attribute, correct);
-        friend.action(searchedUser);
+        String selectedValue = sortedList.get(selectedIndex - 1);
+
+        try {
+            User searchedUser = database.getUser(attribute, selectedValue);
+
+            if (searchedUser != null) {
+                friendManager.action(searchedUser);
+            } else {
+                System.out.println("User not found!");
+            }
+        } catch (SQLException e) {
+            System.out.println("An error occurred while retrieving the user from the database.");
+        }
     }
 
-    public void display(ArrayList<String> inputList, String searchKey) {
+    public void searchFieldHobby(ArrayList<ArrayList<String>> inputList, String attribute) {
+        String search;
+
+        do {
+            System.out.print("Search " + attribute + ": ");
+            search = sc.nextLine();
+            System.out.println("==============================================");
+            if (search.isEmpty()) {
+                System.out.println("Input cannot be empty. Please try again.");
+            }
+        } while (search.isEmpty());
+        ArrayList<User> list = database.loadUsers();
+        ArrayList<User> sortedList = displayUsersWithHobby(list, search);
+
+        if (sortedList.isEmpty()) {
+            System.out.println("No matching results found.");
+            return; // Jump back to the search menu
+        }
+
+        for (int i = 0; i < sortedList.size(); i++) {
+            User user = sortedList.get(i);
+            System.out.println((i + 1) + ". " + user.getUsername());
+        }
+
+        int selectedIndex;
+        do {
+            System.out.println("==============================================");
+            System.out.print("Enter the index of the Hobbies you want to find: ");
+            String input = sc.nextLine();
+
+            try {
+                selectedIndex = Integer.parseInt(input);
+                if (selectedIndex >= 1 && selectedIndex <= sortedList.size()) {
+                    break;
+                } else {
+                    System.out.println("Invalid index! Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Please enter a valid index.");
+            }
+        } while (true);
+
+        User searchedUser = sortedList.get(selectedIndex - 1);
+
+        try {
+
+            User foundUser = database.getUser("UserName", searchedUser.getUsername());
+
+            if (foundUser != null) {
+                friendManager.action(foundUser);
+            } else {
+                System.out.println("User not found!");
+            }
+        } catch (SQLException e) {
+            System.out.println("An error occurred while retrieving the user from the database.");
+        }
+    }
+
+    public ArrayList<String> display(ArrayList<String> inputList, String searchKey) {
         ArrayList<ArrayList<String>> similarity = new ArrayList<>();
         ArrayList<String> row1 = new ArrayList<>(inputList);
         ArrayList<String> row2 = new ArrayList<>();
@@ -135,15 +238,42 @@ public class SearchEngine {
 
         Collections.sort(similarity, comparator);
 
+        ArrayList<String> sortedList = new ArrayList<>();
+
         if (similarity.size() >= 10) {
             for (int i = 0; i < 10; i++) {
-                System.out.println(similarity.get(i).get(0));
+                String username = similarity.get(i).get(0);
+                if (!username.equals(loggedInUser.getUsername())) {
+                    sortedList.add(username);
+                }
             }
         } else if (similarity.size() > 0 && similarity.size() < 10) {
             for (int i = 0; i < similarity.size(); i++) {
-                System.out.println(similarity.get(i).get(0));
+                String username = similarity.get(i).get(0);
+                if (!username.equals(loggedInUser.getUsername())) {
+                    sortedList.add(username);
+                }
             }
         }
+        return sortedList;
+    }
+
+    public ArrayList<User> displayUsersWithHobby(ArrayList<User> userList, String searchKey) {
+        ArrayList<User> sortedList = new ArrayList<>();
+
+        for (User user : userList) {
+            ArrayList<String> hobbies = user.getHobbies();
+
+            // Check if the hobbies list contains the search key
+            for (String hobby : hobbies) {
+                if (hobby.equalsIgnoreCase(searchKey)) {
+                    sortedList.add(user);
+                    break;
+                }
+            }
+        }
+
+        return sortedList;
     }
 
     public double DamerauLevenshteinDistance(String searchKey, String element) {
@@ -151,7 +281,7 @@ public class SearchEngine {
             return 0;
         } else if (element.startsWith(searchKey) || element.endsWith(searchKey)) {
             return 0.1;
-        } else if (match(searchKey, element)) { //finding longest common substring
+        } else if (match(searchKey, element)) {
             int[][] commonSubstring = new int[searchKey.length() + 1][element.length() + 1];
             int length = 0;
             for (int i = 1; i <= searchKey.length(); i++) {
@@ -164,22 +294,23 @@ public class SearchEngine {
                     }
                 }
             }
+
             int middle = searchKey.length() / 2;
-            int quarter = middle / 2;
             if (length >= middle) {
-                if (length <= middle + quarter) {
+                if (length <= middle + middle / 2) {
                     return 0.3;
                 } else if (length <= searchKey.length()) {
                     return 0.2;
                 }
-            } else {
-                return formula(searchKey, element);
             }
+
+            return formula(searchKey, element);
         }
+
         return formula(searchKey, element);
     }
 
-    public static int formula(String searchKey, String element) {
+    public int formula(String searchKey, String element) {
         int[][] distance = new int[searchKey.length() + 1][element.length() + 1];
         int cost = 0;
         for (int i = 0; i <= searchKey.length(); i++) {
@@ -208,7 +339,7 @@ public class SearchEngine {
         return distance[searchKey.length()][element.length()];
     }
 
-    public static boolean match(String searchKey, String element) {
+    public boolean match(String searchKey, String element) {
         for (int i = 0; i < searchKey.length(); i++) {
             char ch = searchKey.charAt(i);
             if (element.contains(Character.toString(ch))) {
@@ -216,9 +347,5 @@ public class SearchEngine {
             }
         }
         return false;
-    }
-
-    public void action(User searchedUser) {
-        friendManager.action(searchedUser);
     }
 }
