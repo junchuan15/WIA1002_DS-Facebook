@@ -8,6 +8,7 @@ import java.io.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -149,12 +150,12 @@ public class AdminAccess extends UserAccess {
         System.out.println("Users:\n------------------------");
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
-           
+            if (!user.getAccountID().contains("TFBAM")) {
                 System.out.println("Index: " + i);
                 System.out.println("Account ID: " + user.getAccountID());
                 System.out.println("Username: " + user.getUsername());
                 System.out.println("------------------------");
-            
+            }
         }
 
         System.out.print("Enter the index of the user to delete [-1 to back]: ");
@@ -260,12 +261,13 @@ public class AdminAccess extends UserAccess {
         System.out.println("Users:\n------------------------");
         for (int i = 0; i < users.size(); i++) {
             User user = users.get(i);
-       
-            System.out.println("Index: " + i);
-            System.out.println("Account ID: " + user.getAccountID());
-            System.out.println("Name: " + user.getName());
-            System.out.println("Username: " + user.getUsername());
-            System.out.println("------------------------");
+            if (!user.getAccountID().contains("TFBAM")) {
+                System.out.println("Index: " + i);
+                System.out.println("Account ID: " + user.getAccountID());
+                System.out.println("Name: " + user.getName());
+                System.out.println("Username: " + user.getUsername());
+                System.out.println("------------------------");
+            }
         }
 
         System.out.print("Enter the index of the user to ban [-1 to back]: ");
@@ -279,7 +281,7 @@ public class AdminAccess extends UserAccess {
 
             if (index >= 0 && index < users.size()) {
                 User user = users.get(index);
-               
+
                 System.out.println("User Details:\n------------------------");
                 System.out.println("Account ID: " + user.getAccountID());
                 System.out.println("Name: " + user.getName());
@@ -379,20 +381,25 @@ public class AdminAccess extends UserAccess {
             e.printStackTrace();
         }
     }
+    
+    private ArrayList<String> getReport(Post post) {
+    return database.getList(post, "Report");
+}
 
-    private ArrayList<String> getReport(ArrayList<Post> posts) {
-        ArrayList<String> reports = new ArrayList<>();
-
-        for (Post post : posts) {
-            ArrayList<String> postReports = database.getList(post, "Report");
-            reports.addAll(postReports);
-        }
-
-        return reports;
-    }
 
     public void viewUserReports() {
-        ArrayList<String> reports = getReport(posts);
+        ArrayList<ArrayList<String>> reports = new ArrayList<>();
+
+        for (Post post : posts) {
+            ArrayList<String> postReports = getReport(post);
+            if (!postReports.isEmpty()) {
+                ArrayList<String> reportInfo = new ArrayList<>();
+                reportInfo.add(String.valueOf(post.getPostID()));
+                reportInfo.addAll(postReports);
+                reports.add(reportInfo);
+            }
+        }
+
         if (reports.isEmpty()) {
             System.out.println("No user reports found.");
         } else {
@@ -400,105 +407,67 @@ public class AdminAccess extends UserAccess {
             System.out.println("-------------------------");
 
             int count = 1;
-            for (String report : reports) {
-                String[] reportInfo = report.split(":");
-                if (reportInfo.length >= 3) {
-                    int postIndex = Integer.parseInt(reportInfo[2]);
-                    if (postIndex >= 0 && postIndex < posts.size()) {
-                        Post reportedPost = posts.get(postIndex);
-                        System.out.println(count + ". " + reportInfo[0] + ": " + reportInfo[1]);
-                        System.out.println("Reported Post:");
-                        pm.printPost(reportedPost);
-                        if (reportedPost.getMediaPath() != null && !reportedPost.getMediaPath().isEmpty()) {
-                            pm.viewMedia(reportedPost.getMediaPath());
+            for (ArrayList<String> reportWithComments : reports) {
+                if (!reportWithComments.isEmpty()) {
+                    String report = reportWithComments.get(0);
+                    String[] reportInfo = report.split(":");
+                    if (reportInfo.length >= 2) {
+                        int postIndex;
+                        try {
+                            postIndex = Integer.parseInt(reportInfo[1]);
+                        } catch (NumberFormatException e) {
+                            System.out.println(count + ". Invalid report format.");
+                            count++;
+                            continue;
                         }
-                        System.out.println("-------------------------");
+
+                        if (postIndex >= 0 && postIndex < posts.size()) {
+                            Post reportedPost = posts.get(postIndex);
+                            System.out.println(count + ". " + reportInfo[0] + ": " + reportInfo[1]);
+                            System.out.println("Reported Post:");
+                            pm.printPost(reportedPost);
+                            if (reportedPost.getMediaPath() != null && !reportedPost.getMediaPath().isEmpty()) {
+                                pm.viewMedia(reportedPost.getMediaPath());
+                            }
+                            System.out.println("-------------------------");
+
+                            // Ask for confirmation
+                            System.out.println("Do you want to clear the reports or delete the post?");
+                            System.out.println("1. Clear Reports");
+                            System.out.println("2. Delete Post");
+                            System.out.println("3. Skip");
+                            System.out.print("Enter your choice: ");
+                            int choice = sc.nextInt();
+                            sc.nextLine();
+
+                            switch (choice) {
+                                case 1:
+                                    // Clear the reports for the reported post
+                                    reportWithComments.clear();
+                                    System.out.println("Reports cleared successfully.");
+                                    break;
+                                case 2:
+                                    // Delete the reported post and remove the report from the list
+                                    database.deletePost(reportedPost);
+                                    reports.remove(reportWithComments);
+                                    System.out.println("Reported post deleted successfully.");
+                                    break;
+                                case 3:
+                                    // Skip to the next report
+                                    break;
+                                default:
+                                    System.out.println("Invalid choice. Please try again.");
+                                    break;
+                            }
+                        } else {
+                            System.out.println(count + ". Invalid post index.");
+                        }
                     } else {
-                        System.out.println("Invalid post index.");
+                        System.out.println(count + ". Invalid report format.");
                     }
-                } else {
-                    System.out.println(count + ". Invalid report format.");
                 }
                 count++;
             }
-
-            System.out.println("Options:");
-            System.out.println("1. Delete Report");
-            System.out.println("2. Delete Reported Post");
-            System.out.println("3. Back");
-            System.out.print("Enter your choice: ");
-
-            int choice = sc.nextInt();
-            sc.nextLine();
-            boolean validChoice = false;
-
-            while (!validChoice) {
-                switch (choice) {
-                    case 1:
-                        deleteReport();
-                        validChoice = true;
-                        break;
-                    case 2:
-                        deleteReportedPost(reports, posts);
-                        validChoice = true;
-                        break;
-                    case 3:
-                        validChoice = true;
-                        break;
-                    default:
-                        System.out.println("Invalid choice. Please try again.");
-                        break;
-                }
-            }
-        }
-    }
-
-    private void deleteReport() {
-        ArrayList<String> reports = database.getList(post, "Report");
-
-        if (!reports.isEmpty()) {
-            reports.clear();
-            database.updatePost(post, "Report", reports);
-            System.out.println("All reports deleted successfully.");
-        } else {
-            System.out.println("No reports found for this post.");
-        }
-    }
-
-    private void deleteReportedPost(ArrayList<String> reports, ArrayList<Post> posts) {
-        System.out.print("Enter the index of reported post to delete [-1 to back]: ");
-        if (sc.hasNextInt()) {
-            int index = sc.nextInt();
-            sc.nextLine();
-
-            if (index == -1) {
-                return;
-            }
-
-            if (index >= 0 && index < reports.size()) {
-                String report = reports.get(index);
-                String[] reportInfo = report.split(":");
-                if (reportInfo.length >= 3) {
-                    int postIndex = Integer.parseInt(reportInfo[2]);
-
-                    if (postIndex >= 0 && postIndex < posts.size()) {
-                        Post reportedPost = posts.get(postIndex);
-                        database.deletePost(reportedPost);
-                        reports.remove(index);
-                        database.updatePost(post, "Report", reports);
-
-                        System.out.println("Reported post deleted successfully.");
-                    } else {
-                        System.out.println("Invalid post index.");
-                    }
-                } else {
-                    System.out.println("Invalid report format.");
-                }
-            } else {
-                System.out.println("Invalid index!");
-            }
-        } else {
-            System.out.println("Invalid input! Please enter an integer index.");
         }
     }
 

@@ -53,6 +53,11 @@ public class AccountManager {
             if (loggedInUser != null) {
                 System.out.print("Password: ");
                 String loginPw = sc.nextLine();
+                while (loginPw.length() < 8 || loginPw.length() > 16) {
+                    System.out.println("Invalid password length. Password must be between 8 and 16 characters.");
+                    System.out.print("Password: ");
+                    loginPw = sc.nextLine();
+                }
                 if (encrypt.validatePassword(loggedInUser.getAccountID(), loginPw, loggedInUser.getPassword())) {
                     if (validate.isAdmin(loggedInUser)) {
                         System.out.println("You are logged in as an admin.");

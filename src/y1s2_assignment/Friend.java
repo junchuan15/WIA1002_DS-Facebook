@@ -82,11 +82,33 @@ public class Friend {
                 System.out.println("Deletion canceled.");
             }
         } else if (loggedInUser.getReceivedRequests().contains(username)) {
-            System.out.println(username + " has sent you a friend request. Reject the friend request instead.");
+            rejectFriendRequest(username);
         } else if (loggedInUser.getSentRequests().contains(username)) {
-            System.out.println("You have sent a friend request to " + username + ". Cancel the friend request instead.");
+            cancelFriendRequest(user);
         } else {
             System.out.println(username + " is not in your friends list.");
+        }
+    }
+
+    private void cancelFriendRequest(User user) {
+        String username = user.getUsername();
+
+        if (loggedInUser.getSentRequests().contains(username)) {
+            removeFriendRequest(user);
+            loggedInUser.getSentRequests().remove(username);
+            database.updateUserDetail(loggedInUser);
+            System.out.println("Friend request to " + username + " canceled.");
+        } else {
+            System.out.println("No friend request found to cancel for " + username + ".");
+        }
+    }
+
+    private void removeFriendRequest(User user) {
+        String username = loggedInUser.getUsername();
+
+        if (user.getReceivedRequests().contains(username)) {
+            user.getReceivedRequests().remove(username);
+            database.updateUserDetail(user);
         }
     }
 
@@ -194,26 +216,30 @@ public class Friend {
 
         }
 
-        System.out.print("Enter the index of the user you want to view [-1 to back]:");
-        int selectedIndex = scanner.nextInt();
-        if (selectedIndex == -1) {
-            return; // Go back
-        }
-        System.out.println("==============================================");
+        try {
+            System.out.print("Enter the index of the user you want to view [-1 to back]:");
+            int selectedIndex = scanner.nextInt();
+            if (selectedIndex == -1) {
+                return; // Go back
+            }
+            System.out.println("==============================================");
 
-        if (selectedIndex < 1 || selectedIndex > friends.size()) {
-            System.out.println("Invalid index. Please try again.");
-            return;
-        }
+            if (selectedIndex < 1 || selectedIndex > friends.size()) {
+                System.out.println("Invalid index. Please try again.");
+            }
 
-        String selectedUserName = friends.get(selectedIndex - 1);
-        User selectedUser = database.getUser("UserName", selectedUserName);
-        if (selectedUser == null) {
-            System.out.println("User not found. Please try again.");
-            return;
-        }
+            String selectedUserName = friends.get(selectedIndex - 1);
+            User selectedUser = database.getUser("UserName", selectedUserName);
+            if (selectedUser == null) {
+                System.out.println("User not found. Please try again.");
+                return;
+            }
 
-        action(selectedUser);
+            action(selectedUser);
+        } catch (InputMismatchException e) {
+            System.out.println("Invalid input. Please enter a valid index.");
+            scanner.nextLine();
+        }
     }
 
     public void showSentRequests() throws SQLException {
@@ -230,24 +256,31 @@ public class Friend {
             System.out.println((i + 1) + ". " + sentRequest);
         }
 
-        System.out.print("Enter the index of the user you want to view [-1 to back]: ");
-        int selectedIndex = scanner.nextInt();
-        if (selectedIndex == -1) {
-            return; // Go back
-        }
-        System.out.println("==============================================");
-        if (selectedIndex < 1 || selectedIndex > sentRequests.size()) {
-            System.out.println("Invalid index. Please try again.");
-            return;
+        try {
+            System.out.print("Enter the index of the user you want to view [-1 to back]: ");
+            int selectedIndex = scanner.nextInt();
+            if (selectedIndex == -1) {
+                return; // Go back
+            }
+            System.out.println("==============================================");
+
+            if (selectedIndex < 1 || selectedIndex > sentRequests.size()) {
+                System.out.println("Invalid index. Please try again.");
+            }
+
+            String selectedUserName = sentRequests.get(selectedIndex - 1);
+            User selectedUser = database.getUser("UserName", selectedUserName);
+            if (selectedUser == null) {
+                System.out.println("User not found. Please try again.");
+                return;
+            }
+
+            action(selectedUser);
+        } catch (InputMismatchException e) {
+            System.out.println("Invalid input. Please enter a valid index.");
+            scanner.nextLine();
         }
 
-        String selectedUserName = sentRequests.get(selectedIndex - 1);
-        User selectedUser = database.getUser("UserName", selectedUserName);
-        if (selectedUser == null) {
-            System.out.println("User not found. Please try again.");
-            return;
-        }
-        action(selectedUser);
     }
 
     public void handleFriendRequests() {
@@ -263,20 +296,27 @@ public class Friend {
             System.out.println((i + 1) + ". " + friendRequest);
         }
 
-        System.out.print("Enter the index of the friend request to process [-1 to back]: ");
-        Scanner scanner = new Scanner(System.in);
-        int choice = scanner.nextInt();
-        if (choice == -1) {
-            return; // Go back
-        }
+        try {
+            System.out.print("Enter the index of the friend request to process [-1 to back]: ");
+            int choice = scanner.nextInt();
+            if (choice == -1) {
+                return; // Go back
+            }
 
-        if (choice < 1 || choice > pendingRequests.size()) {
-            System.out.println("Invalid choice. Request not processed.");
-            return;
-        }
+            if (choice < 1 || choice > pendingRequests.size()) {
+                System.out.println("Invalid choice. Request not processed.");
+                return;
+            }
 
-        String friendToProcess = pendingRequests.get(choice - 1);
-        processFriendRequest(friendToProcess);
+            String friendToProcess = pendingRequests.get(choice - 1);
+            processFriendRequest(friendToProcess);
+        } catch (InputMismatchException e) {
+            String input = scanner.next();
+            if (input.equals("-1")) {
+                return; // Go back
+            }
+            System.out.println("Invalid input. Please enter a valid choice.");
+        }
     }
 
     private void processFriendRequest(String friendUsername) {
@@ -418,6 +458,7 @@ public class Friend {
 
         // Sort the users based on the calculated score
         users.sort(Comparator.comparingInt(this::calculateScore).reversed());
+
         if (users.isEmpty()) {
             System.out.println("No friend recommendations available.");
             return;
@@ -453,14 +494,14 @@ public class Friend {
         }
 
         int friendChoice = -1;
-        while (friendChoice != -1) {
+        while (true) {
             System.out.print("Choose a friend from the recommendation list (enter the number, or -1 to go back): ");
             try {
                 friendChoice = scanner.nextInt();
                 scanner.nextLine();
 
                 if (friendChoice == -1) {
-                    return; // Go back
+                    break; // Go back
                 } else if (friendChoice < 1 || friendChoice > users.size()) {
                     System.out.println("Invalid choice! Please try again.");
                 } else {
@@ -476,11 +517,10 @@ public class Friend {
     }
 
     private int countMutualFriends(User user) {
-        Vertex loggedInUserVertex = graph.findVertex(loggedInUser);
-        Vertex userVertex = graph.findVertex(user);
-
-        if (loggedInUserVertex != null && userVertex != null) {
-            return graph.countMutualConnections(loggedInUserVertex, userVertex);
+        User u1 = graph.getUserG(loggedInUser.getUsername());
+        User u2 = graph.getUserG(user.getUsername());
+        if (u1 != null && u2 != null) {
+            return graph.countMutualFriends(u1, u2);
         }
 
         return 0;
@@ -506,68 +546,33 @@ public class Friend {
     }
 
     public void degreeRecommend() throws SQLException {
-        List<User> recommendedFriends = graph.getRecommendedConnections(loggedInUser);
+        User login = graph.getUserG(loggedInUser.getUsername());
+        List<User> recommendedFriends = graph.getRecommendedConnections(login);
 
-        // Sort the recommended friends based on the number of mutuals in descending order
-        recommendedFriends.sort((u1, u2) -> {
-            int mutuals1 = countMutualConnections(loggedInUser, u1);
-            int mutuals2 = countMutualConnections(loggedInUser, u2);
-            return Integer.compare(mutuals2, mutuals1);
-        });
-
-        // Split the recommended friends into 2nd-degree and 3rd-degree connections
-        List<User> secondDegree = new ArrayList<>();
-        List<User> thirdDegree = new ArrayList<>();
-
-        for (User friend : recommendedFriends) {
-            int mutuals = countMutualConnections(loggedInUser, friend);
-            if (mutuals > 0) {
-                if (graph.getShortestDistance(loggedInUser, friend) == 2) {
-                    secondDegree.add(friend);
-                } else if (graph.getShortestDistance(loggedInUser, friend) == 3) {
-                    thirdDegree.add(friend);
-                }
-            }
-        }
-
-        // Sort the 2nd-degree connections based on the number of mutuals in descending order
-        secondDegree.sort((u1, u2) -> Integer.compare(countMutualConnections(loggedInUser, u2), countMutualConnections(loggedInUser, u1)));
-
-        // Sort the 3rd-degree connections alphabetically
-        thirdDegree.sort(Comparator.comparing(User::getUsername));
-
-        List<User> friendRecommendations = new ArrayList<>();
-
-        // Add the 2nd-degree connections with higher priority
-        friendRecommendations.addAll(secondDegree);
-
-        // Add the 3rd-degree connections with lower priority
-        friendRecommendations.addAll(thirdDegree);
-
-        if (friendRecommendations.isEmpty()) {
+        if (recommendedFriends.isEmpty()) {
             System.out.println("No friend recommendations available.");
         } else {
             System.out.println("Friend Recommendations:");
             int count = 1;
-            for (User recommendedUser : friendRecommendations) {
-                System.out.println(count + ". " + recommendedUser.getUsername());
-                count++;
+            for (User recommendedUser : recommendedFriends) {
+        System.out.println(count + ". " + recommendedUser.getUsername() + " (" + countMutualFriends(recommendedUser) + " mutual friend(s))");
+        count++;
             }
 
             Scanner sc = new Scanner(System.in);
             int friendChoice = 0;
 
-            while (friendChoice < 1 || friendChoice > friendRecommendations.size()) {
+            while (friendChoice < 1 || friendChoice > recommendedFriends.size()) {
                 System.out.print("Choose a friend from the recommendation list (enter the number): ");
                 friendChoice = sc.nextInt();
                 sc.nextLine();
 
-                if (friendChoice < 1 || friendChoice > friendRecommendations.size()) {
+                if (friendChoice < 1 || friendChoice > recommendedFriends.size()) {
                     System.out.println("Invalid choice! Please try again.");
                 }
             }
 
-            User selectedFriend = friendRecommendations.get(friendChoice - 1);
+            User selectedFriend = recommendedFriends.get(friendChoice - 1);
             action(selectedFriend);
         }
     }

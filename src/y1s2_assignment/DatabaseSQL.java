@@ -319,7 +319,7 @@ public class DatabaseSQL {
         }
     }
 
-    private String joinWithComma(List<String> list) {
+    public String joinWithComma(List<String> list) {
         StringBuilder sb = new StringBuilder();
         boolean isFirst = true;
         for (String element : list) {
@@ -335,7 +335,7 @@ public class DatabaseSQL {
         return sb.toString();
     }
 
-    public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList, User user) {
+    public void readFromTable(ArrayList<String> accountIDList, ArrayList<String> usernameList, ArrayList<String> emailList, ArrayList<String> contactNumberList, ArrayList<String> nameList, ArrayList<ArrayList<String>> hobbiesList, User user) {
         try {
             Connection con = DriverManager.getConnection(url, username, password);
             Statement statement = con.createStatement();
@@ -348,12 +348,18 @@ public class DatabaseSQL {
                 String email = rs.getString("EmailAddress");
                 String contactNumber = rs.getString("ContactNumber");
                 String name = rs.getString("Name");
+                String hobbiesString = rs.getString("Hobbies");
 
                 accountIDList.add(accountID);
                 usernameList.add(username);
                 emailList.add(email);
                 contactNumberList.add(contactNumber);
                 nameList.add(name);
+
+                // Split the hobbiesString into individual hobbies using comma as the delimiter
+                String[] hobbiesArray = hobbiesString.split(",");
+                ArrayList<String> hobbies = new ArrayList<>(Arrays.asList(hobbiesArray));
+                hobbiesList.add(hobbies);
             }
 
             rs.close();
@@ -498,7 +504,7 @@ public class DatabaseSQL {
         return userList;
     }
 
-     public ConnectionGraph createGraph() {
+    public ConnectionGraph createGraph() {
         ConnectionGraph graph = new ConnectionGraph();
         ArrayList<User> users = loadUsers();
 

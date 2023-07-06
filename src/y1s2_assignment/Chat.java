@@ -10,11 +10,14 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  *
@@ -237,50 +240,49 @@ public class Chat {
 
     public void chatManager() {
         Scanner scanner = new Scanner(System.in);
+         System.out.println("==============================================");
+        System.out.println("                 MESSENGER                       ");
+        System.out.println("==============================================");
         System.out.println("You have entered the chat manager. Choose a friend to chat with:");
 
         ArrayList<String> friends = loggedInUser.getFriends();
         ArrayList<User> friendObjects = new ArrayList<>();
 
-        ArrayList<LocalDateTime> latestChatTimestamps = new ArrayList<>();
-        ArrayList<String> lastMessages = new ArrayList<>();
-
         for (String friend : friends) {
             User friendObj = database.getUser("UserName", friend);
             if (friendObj != null) {
                 friendObjects.add(friendObj);
-                loadChatHistory(friendObj);
-                // Get the latest chat timestamp and last message for each friend
-                if (!chatEntries.isEmpty()) {
-                    ChatEntry lastChatEntry = chatEntries.get(chatEntries.size() - 1);
-                    latestChatTimestamps.add(lastChatEntry.getTimestamp());
-                    lastMessages.add(lastChatEntry.getMessage());
-                } else {
-                    // If no chat history, assume default values
-                    latestChatTimestamps.add(LocalDateTime.MIN);
-                    lastMessages.add("");
-                }
             }
         }
-
-        // Sort the friendObjects list based on the latest chat timestamp in descending order
-        friendObjects.sort(Comparator.comparing(friend -> latestChatTimestamps.get(friendObjects.indexOf(friend))).reversed());
 
         if (friendObjects.isEmpty()) {
             System.out.println("You have no friends to chat with.");
             return;
         }
 
+        friendObjects.sort(Comparator.comparing(friend -> {
+            LocalDateTime latestTimestamp = getLatestChatTimestamp(loggedInUser.getUsername(), friend.getUsername());
+            LocalDateTime now = LocalDateTime.now();
+            long minutesAgo = ChronoUnit.MINUTES.between(latestTimestamp, now);
+            return minutesAgo;
+        }));
+
         int choice = 1;
+
         for (User friend : friendObjects) {
-            LocalDateTime latestTimestamp = latestChatTimestamps.get(friendObjects.indexOf(friend));
-            String lastMessage = lastMessages.get(friendObjects.indexOf(friend));
+            String lastMessage = getLastChatMessage(loggedInUser.getUsername(), friend.getUsername());
+            LocalDateTime latestTimestamp = getLatestChatTimestamp(loggedInUser.getUsername(), friend.getUsername());
 
             if (latestTimestamp.equals(LocalDateTime.MIN)) {
-                System.out.println(choice + ". " + friend.getUsername() + " (No chat history)");
+                System.out.println(choice + ". " + friend.getUsername());
             } else {
-                System.out.println(choice + ". " + friend.getUsername() + " (Last Message: " + latestTimestamp + ")");
+                LocalDateTime now = LocalDateTime.now();
+                long minutesAgo = ChronoUnit.MINUTES.between(latestTimestamp, now);
+                String timeAgo = (minutesAgo <= 0) ? "just now" : minutesAgo + " minute(s) ago";
+
+                System.out.println(choice + ". " + friend.getUsername() + " (Last Message: " + timeAgo + ")");
             }
+
             choice++;
         }
 
@@ -297,6 +299,7 @@ public class Chat {
                     User friend = friendObjects.get(friendChoice - 1);
                     try {
                         System.out.println("You are now chatting with " + friend.getUsername());
+                        loadChatHistory(friend);
                         printChat(1);
                         String message;
                         boolean isChatting = true;
@@ -304,19 +307,18 @@ public class Chat {
                         while (isChatting) {
                             System.out.print("You: ");
                             message = scanner.nextLine();
-
                             switch (message.toLowerCase()) {
                                 case "exit":
                                     isChatting = false;
                                     break;
                                 case "delete":
-                                    System.out.print("Enter the index[0 as first line of chat] of the message to remove: ");
+                                    System.out.print("Enter the index[0 as the first line of chat] of the message to remove: ");
                                     int index = scanner.nextInt();
                                     scanner.nextLine();
                                     removeMessage(index);
                                     break;
                                 case "edit":
-                                    System.out.print("Enter the index[0 as first line of chat] of the message to edit: ");
+                                    System.out.print("Enter the index[0 as the first line of chat] of the message to edit: ");
                                     index = scanner.nextInt();
                                     scanner.nextLine();
                                     System.out.print("Enter the new message: ");
@@ -329,6 +331,7 @@ public class Chat {
                             }
                         }
                         saveChatHistory(friend);
+                        clearChatHistory();
                     } catch (Exception e) {
                         System.out.println("Error occurred during the chat: " + e.getMessage());
                     }
@@ -343,14 +346,58 @@ public class Chat {
         }
     }
 
+    private void clearChatHistory() {
+        chatEntries.clear();
+
+    }
+
+    private LocalDateTime getLatestChatTimestamp(String sender, String receiver) {
+        LocalDateTime latestTimestamp = LocalDateTime.MIN;
+
+        for (ChatEntry entry : chatEntries) {
+            if ((entry.getSender().equals(sender) && entry.getReceiver().equals(receiver))
+                    || (entry.getSender().equals(receiver) && entry.getReceiver().equals(sender))) {
+                LocalDateTime timestamp = entry.getTimestamp();
+                if (timestamp.isAfter(latestTimestamp)) {
+                    latestTimestamp = timestamp;
+                }
+            }
+        }
+
+        return latestTimestamp;
+    }
+
+    private String getLastChatMessage(String sender, String receiver) {
+        String lastMessage = "";
+
+        for (ChatEntry entry : chatEntries) {
+            if ((entry.getSender().equals(sender) && entry.getReceiver().equals(receiver))
+                    || (entry.getSender().equals(receiver) && entry.getReceiver().equals(sender))) {
+                lastMessage = entry.getMessage();
+            }
+        }
+
+        return lastMessage;
+    }
+
     private class ChatEntry {
 
+        private String senderUsername;
+        private String receiverUsername;
         private String message;
         private LocalDateTime timestamp;
 
         public ChatEntry(String message, LocalDateTime timestamp) {
             this.message = message;
             this.timestamp = timestamp;
+        }
+
+        public String getSender() {
+            return senderUsername;
+        }
+
+        public String getReceiver() {
+            return receiverUsername;
         }
 
         public String getMessage() {

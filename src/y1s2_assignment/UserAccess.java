@@ -15,13 +15,12 @@ import java.util.Scanner;
 public class UserAccess {
 
     protected User loggedInUser;
-    private DatabaseSQL database;
+    private DatabaseSQL database = new DatabaseSQL();
     private Encryption encrypt = new Encryption();
     Scanner sc = new Scanner(System.in);
 
     public UserAccess(User loggedInUser) {
-        this.loggedInUser = loggedInUser;
-        this.database = new DatabaseSQL();
+        this.loggedInUser = database.getUser("UserName", loggedInUser.getUsername());
     }
 
     public UserAccess() {
@@ -254,7 +253,7 @@ public class UserAccess {
         boolean edit = false;
         while (!back) {
             System.out.println("==============================================");
-            System.out.println("             Displaying user profile           ");
+            System.out.println("           Displaying user profile           ");
             System.out.println("==============================================");
             System.out.println("Account ID:            " + loggedInUser.getAccountID());
             System.out.println("Name:                  " + loggedInUser.getName());

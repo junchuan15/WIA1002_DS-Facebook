@@ -4,7 +4,6 @@
  */
 package y1s2_assignment;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Random;
 

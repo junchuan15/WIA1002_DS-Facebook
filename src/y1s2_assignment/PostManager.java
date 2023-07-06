@@ -42,11 +42,18 @@ public class PostManager {
         System.out.println("What's on your mind, " + loggedinUser.getUsername() + "?");
         String content = sc.nextLine();
         boolean containsBadWords = BadWordsChecker(content);
-        while (containsBadWords) {
-            System.out.println("Your post contains profane words. Please rephrase.");
+
+        while (content.isEmpty() || containsBadWords) {
+            if (content.isEmpty()) {
+                System.out.println("Your post cannot be empty. Please enter your content:");
+            } else {
+                System.out.println("Your post contains profane words. Please rephrase:");
+            }
+
             content = sc.nextLine();
             containsBadWords = BadWordsChecker(content);
         }
+
         String choice;
         boolean validChoice = false;
         while (!validChoice) {
@@ -82,6 +89,7 @@ public class PostManager {
                 System.out.println("Invalid choice. Please enter 'Y' or 'N'.");
             }
         }
+        return;
     }
 
     private void createPost(String content, String mediaPath) {
@@ -223,14 +231,14 @@ public class PostManager {
                 case 1:
                     currentIndex--;
                     if (currentIndex < 0) {
-                        System.out.println("End of posts.");
+                        System.out.println("End of posts for Account_ID: " + currentPost.getAccountID());
                         exit = true;
                     }
                     break;
                 case 2:
                     currentIndex++;
                     if (currentIndex >= posts.size()) {
-                        System.out.println("Start of posts.");
+                        System.out.println("Start of posts for Account_ID: " + currentPost.getAccountID());
                         exit = true;
                     }
                     break;
@@ -298,45 +306,26 @@ public class PostManager {
 
     // View post for friends
     public void viewPost(User user) throws SQLException {
-        LinkedList<Post> posts = new LinkedList<>();
-        posts = database.getPosts(user.getAccountID());
+        LinkedList<Post> posts = database.getPosts(user.getAccountID());
 
         if (posts.isEmpty()) {
             System.out.println(user.getUsername() + " has no posts.");
-        } else {
-            int currentIndex = posts.size() - 1;
-            boolean exit = false;
+            return;
+        }
 
-            while (!exit) {
-                Post currentPost = posts.get(currentIndex);
+        int currentIndex = posts.size() - 1;
+        boolean exit = false;
 
-                if (currentPost.getStatusAsString().equalsIgnoreCase("PRIVATE") && !user.getFriends().contains(loggedinUser.getUsername())) {
-                    currentIndex--;
+        while (!exit) {
+            Post currentPost = posts.get(currentIndex);
 
-                    if (currentIndex < 0) {
-                        System.out.println("End of posts.");
-                        exit = true;
-                    }
-
-                    continue;
-                }
-                printPost(currentPost);
-                if (currentPost.getMediaPath() != null && !currentPost.getMediaPath().isEmpty()) {
-                    viewMedia(currentPost.getMediaPath());
-                }
-                performAction("PostID:" + String.valueOf(currentPost.getPostID()) + " Viewed Post by " + database.getUser("Account_ID", currentPost.getAccountID()).getUsername());
-                System.out.println("     -----------------------------------");
+            if (currentPost.getStatusAsString().equalsIgnoreCase("PRIVATE") && !loggedinUser.getFriends().contains(user.getUsername())) {
+                System.out.println("This post is private.");
                 System.out.println("==============================================");
                 System.out.println("Action : ");
                 System.out.println("1. Next Post");
                 System.out.println("2. Previous Post");
-                System.out.println("3. Like Post");
-                System.out.println("4. Unlike Post");
-                System.out.println("5. Comment on Post");
-                System.out.println("6. View Likes");
-                System.out.println("7. View Comments");
-                System.out.println("8. Report Post");
-                System.out.println("9. Back");
+                System.out.println("3. Back");
                 System.out.print("Enter your choice: ");
                 int choice = sc.nextInt();
                 sc.nextLine();
@@ -345,42 +334,87 @@ public class PostManager {
                     case 1:
                         currentIndex--;
                         if (currentIndex < 0) {
-                            System.out.println("End of posts.");
+                            System.out.println("End of posts for Account_ID: " + currentPost.getAccountID());
                             exit = true;
                         }
                         break;
                     case 2:
                         currentIndex++;
                         if (currentIndex >= posts.size()) {
-                            System.out.println("Start of posts.");
+                            System.out.println("Start of posts for Account_ID: " + currentPost.getAccountID());
                             exit = true;
                         }
                         break;
                     case 3:
-                        likePost(currentPost, user);
-                        break;
-                    case 4:
-                        unlikePost(currentPost, user);
-                        break;
-                    case 5:
-                        commentPost(currentPost, user);
-                        break;
-                    case 6:
-                        viewLikes(currentPost);
-                        break;
-                    case 7:
-                        viewComments(currentPost);
-                        break;
-                    case 8:
-                        reportPost(currentPost, user);
-                        break;
-                    case 9:
                         exit = true;
                         break;
                     default:
                         System.out.println("Invalid choice. Please try again.");
                         break;
                 }
+                continue;
+            }
+
+            printPost(currentPost);
+            if (currentPost.getMediaPath() != null && !currentPost.getMediaPath().isEmpty()) {
+                viewMedia(currentPost.getMediaPath());
+            }
+            performAction("PostID:" + String.valueOf(currentPost.getPostID()) + " Viewed Post by " + database.getUser("Account_ID", currentPost.getAccountID()).getUsername());
+            System.out.println("     -----------------------------------");
+            System.out.println("==============================================");
+            System.out.println("Action : ");
+            System.out.println("1. Next Post");
+            System.out.println("2. Previous Post");
+            System.out.println("3. Like Post");
+            System.out.println("4. Unlike Post");
+            System.out.println("5. Comment on Post");
+            System.out.println("6. View Likes");
+            System.out.println("7. View Comments");
+            System.out.println("8. Report Post");
+            System.out.println("9. Back");
+            System.out.print("Enter your choice: ");
+            int choice = sc.nextInt();
+            sc.nextLine();
+            System.out.println("==============================================");
+            switch (choice) {
+                case 1:
+                    currentIndex--;
+                    if (currentIndex < 0) {
+                        System.out.println("End of posts for Account_ID: " + currentPost.getAccountID());
+                        exit = true;
+                    }
+                    break;
+                case 2:
+                    currentIndex++;
+                    if (currentIndex >= posts.size()) {
+                        System.out.println("Start of posts for Account_ID: " + currentPost.getAccountID());
+                        exit = true;
+                    }
+                    break;
+                case 3:
+                    likePost(currentPost, user);
+                    break;
+                case 4:
+                    unlikePost(currentPost, user);
+                    break;
+                case 5:
+                    commentPost(currentPost, user);
+                    break;
+                case 6:
+                    viewLikes(currentPost);
+                    break;
+                case 7:
+                    viewComments(currentPost);
+                    break;
+                case 8:
+                    reportPost(currentPost, user);
+                    break;
+                case 9:
+                    exit = true;
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+                    break;
             }
         }
     }
@@ -513,7 +547,7 @@ public class PostManager {
         List<Post> filteredPosts = new ArrayList<>();
 
         for (Post post : posts) {
-            if (post.getAccountID() != loggedinUser.getAccountID() || post.getStatusAsString() != "PRIVATE") {
+            if (post.getAccountID() != loggedinUser.getAccountID() && post.getStatusAsString().equals("PUBLIC")) {
                 filteredPosts.add(post);
             }
         }
@@ -521,10 +555,16 @@ public class PostManager {
         if (filteredPosts.isEmpty()) {
             System.out.println("No posts available in the explore feed.");
         } else {
-            int randomIndex = new Random().nextInt(filteredPosts.size());
-            Post currentPost = filteredPosts.get(randomIndex);
-            User postOwner = database.getUser("Account_ID", currentPost.getAccountID());
-            viewPost(postOwner);
+            int postIndex = 0;
+            while (!filteredPosts.isEmpty()) {
+                Post currentPost = filteredPosts.get(postIndex);
+                User postOwner = database.getUser("Account_ID", currentPost.getAccountID());
+                viewPost(postOwner);
+                filteredPosts.remove(postIndex);
+                if (postIndex >= filteredPosts.size()) {
+                    postIndex = 0;
+                }
+            }
         }
     }
 
@@ -602,7 +642,7 @@ public class PostManager {
         for (Post post : posts) {
             if (post.getPostID() == postID) {
                 try {
-                    viewUserPosts(posts);
+                    viewPost(user);
                     return;
                 } catch (SQLException e) {
                     System.out.println("Failed to view user posts.");

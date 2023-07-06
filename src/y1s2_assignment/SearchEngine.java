@@ -22,6 +22,7 @@ public class SearchEngine {
     private ArrayList<String> emailList;
     private ArrayList<String> contactNumberList;
     private ArrayList<String> nameList;
+    private ArrayList<ArrayList<String>> hobbies;
     private DatabaseSQL database = new DatabaseSQL();
     private UserAccess userAccess = new UserAccess();
     private User loggedInUser;
@@ -35,9 +36,10 @@ public class SearchEngine {
         this.emailList = new ArrayList<>();
         this.contactNumberList = new ArrayList<>();
         this.nameList = new ArrayList<>();
+        this.hobbies = new ArrayList<>();
         this.friendManager = new Friend(loggedInUser);
         this.sc = new Scanner(System.in);
-        this.database.readFromTable(accountIDList, usernameList, emailList, contactNumberList, nameList, loggedInUser);
+        this.database.readFromTable(accountIDList, usernameList, emailList, contactNumberList, nameList, hobbies, loggedInUser);
     }
 
     public void searchUsers() {
@@ -52,7 +54,8 @@ public class SearchEngine {
             System.out.println("          3. By email");
             System.out.println("          4. By contact number");
             System.out.println("          5. By name");
-            System.out.println("          6. Back to Main Menu");
+            System.out.println("          6. By hobbies");
+            System.out.println("          7. Back to Main Menu");
             System.out.println("==============================================");
             System.out.print("Enter your choice: ");
 
@@ -77,6 +80,8 @@ public class SearchEngine {
                         searchField(nameList, "Name");
                         break;
                     case 6:
+                        searchFieldHobby(hobbies, "Hobbies");
+                    case 7:
                         exit = true;
                         System.out.println("Returning to Main Menu...");
                         break;
@@ -117,7 +122,7 @@ public class SearchEngine {
         int selectedIndex = 1;
         do {
             System.out.println("==============================================");
-            System.out.print("Enter the index of the " + attribute + " you want to find : ");
+            System.out.print("Enter the index of the Hobbies you want to find: ");
             String input = sc.nextLine();
 
             try {
@@ -139,6 +144,64 @@ public class SearchEngine {
 
             if (searchedUser != null) {
                 friendManager.action(searchedUser);
+            } else {
+                System.out.println("User not found!");
+            }
+        } catch (SQLException e) {
+            System.out.println("An error occurred while retrieving the user from the database.");
+        }
+    }
+
+    public void searchFieldHobby(ArrayList<ArrayList<String>> inputList, String attribute) {
+        String search;
+
+        do {
+            System.out.print("Search " + attribute + ": ");
+            search = sc.nextLine();
+            System.out.println("==============================================");
+            if (search.isEmpty()) {
+                System.out.println("Input cannot be empty. Please try again.");
+            }
+        } while (search.isEmpty());
+        ArrayList<User> list = database.loadUsers();
+        ArrayList<User> sortedList = displayUsersWithHobby(list, search);
+
+        if (sortedList.isEmpty()) {
+            System.out.println("No matching results found.");
+            return; // Jump back to the search menu
+        }
+
+        for (int i = 0; i < sortedList.size(); i++) {
+            User user = sortedList.get(i);
+            System.out.println((i + 1) + ". " + user.getUsername());
+        }
+
+        int selectedIndex;
+        do {
+            System.out.println("==============================================");
+            System.out.print("Enter the index of the Hobbies you want to find: ");
+            String input = sc.nextLine();
+
+            try {
+                selectedIndex = Integer.parseInt(input);
+                if (selectedIndex >= 1 && selectedIndex <= sortedList.size()) {
+                    break;
+                } else {
+                    System.out.println("Invalid index! Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Please enter a valid index.");
+            }
+        } while (true);
+
+        User searchedUser = sortedList.get(selectedIndex - 1);
+
+        try {
+
+            User foundUser = database.getUser("UserName", searchedUser.getUsername());
+
+            if (foundUser != null) {
+                friendManager.action(foundUser);
             } else {
                 System.out.println("User not found!");
             }
@@ -192,6 +255,24 @@ public class SearchEngine {
                 }
             }
         }
+        return sortedList;
+    }
+
+    public ArrayList<User> displayUsersWithHobby(ArrayList<User> userList, String searchKey) {
+        ArrayList<User> sortedList = new ArrayList<>();
+
+        for (User user : userList) {
+            ArrayList<String> hobbies = user.getHobbies();
+
+            // Check if the hobbies list contains the search key
+            for (String hobby : hobbies) {
+                if (hobby.equalsIgnoreCase(searchKey)) {
+                    sortedList.add(user);
+                    break;
+                }
+            }
+        }
+
         return sortedList;
     }
 
